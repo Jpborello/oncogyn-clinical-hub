@@ -37,3 +37,77 @@
     padding: 0;
   }
 }
+
+/* RESPONSIVE LAYOUT HELPER CLASSES */
+
+@media (max-width: 1024px) {
+  .app-container {
+    flex-direction: column !important;
+  }
+  
+  .sidebar-container {
+    width: 100% !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: auto !important;
+    z-index: 150;
+    padding: 12px 16px !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar-nav-container {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    width: 100%;
+  }
+
+  .sidebar-nav-container.open {
+    display: flex !important;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .main-content-container {
+    margin-top: 60px !important;
+    height: calc(100vh - 60px) !important;
+  }
+
+  .grid-4cols {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .panel-2cols {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-4cols {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .header-container {
+    padding: 0 16px !important;
+  }
+
+  .header-container h2 {
+    font-size: 16px !important;
+  }
+
+  .main-padding {
+    padding: 16px !important;
+  }
+
+  .modal-container {
+    padding: 16px !important;
+    max-width: 95vw !important;
+  }
+}
+

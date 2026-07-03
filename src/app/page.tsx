@@ -132,6 +132,7 @@ export default function App() {
   const [globalSearchInput, setGlobalSearchInput] = useState('');
   const [dictadoActivoGlobal, setDictadoActivoGlobal] = useState(false);
   const [resultadosBusquedaGlobal, setResultadosBusquedaGlobal] = useState<any[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Configuración de API Key local
   const [apiKey, setApiKey] = useState('');
@@ -1004,10 +1005,10 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
   const cirugiasPaciente = cirugias.filter(c => c.paciente_id === pacienteSeleccionadoId);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: basePalette.bgMain, color: basePalette.textMain }}>
+    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', background: basePalette.bgMain, color: basePalette.textMain }}>
       
       {/* SIDEBAR */}
-      <aside style={{
+      <aside className="sidebar-container" style={{
         width: '260px',
         background: basePalette.sidebarBg,
         color: '#f8fafc',
@@ -1019,17 +1020,42 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
         flexShrink: 0
       }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px', paddingLeft: '8px' }}>
-            <HeartPulse size={28} style={{ color: basePalette.secundario }} />
-            <div>
-              <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#FFFFFF' }}>OncoGyn</h1>
-              <p style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Portal Cirujano</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', paddingLeft: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <HeartPulse size={28} style={{ color: basePalette.secundario }} />
+              <div>
+                <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#FFFFFF' }}>OncoGyn</h1>
+                <p style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>Portal Cirujano</p>
+              </div>
             </div>
+            {/* Botón Hamburger solo visible en móviles/tabletas */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#FFFFFF',
+                cursor: 'pointer',
+                display: 'none',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              className="mobile-hamburger-btn"
+            >
+              <Menu size={24} />
+            </button>
+            <style jsx global>{`
+              @media (max-width: 1024px) {
+                .mobile-hamburger-btn {
+                  display: flex !important;
+                }
+              }
+            `}</style>
           </div>
 
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <nav className={`sidebar-nav-container ${mobileMenuOpen ? 'open' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button 
-              onClick={() => setActiveTab('assistant')} 
+              onClick={() => { setActiveTab('assistant'); setMobileMenuOpen(false); }} 
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -1050,7 +1076,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
             </button>
 
             <button 
-              onClick={() => setActiveTab('patients')} 
+              onClick={() => { setActiveTab('patients'); setMobileMenuOpen(false); }} 
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -1071,7 +1097,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
             </button>
 
             <button 
-              onClick={() => setActiveTab('hospital')} 
+              onClick={() => { setActiveTab('hospital'); setMobileMenuOpen(false); }} 
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -1092,7 +1118,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
             </button>
 
             <button 
-              onClick={() => setActiveTab('or')} 
+              onClick={() => { setActiveTab('or'); setMobileMenuOpen(false); }} 
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -1113,7 +1139,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
             </button>
 
             <button 
-              onClick={() => setActiveTab('finances')} 
+              onClick={() => { setActiveTab('finances'); setMobileMenuOpen(false); }} 
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -1134,7 +1160,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
             </button>
 
             <button 
-              onClick={() => setActiveTab('research')} 
+              onClick={() => { setActiveTab('research'); setMobileMenuOpen(false); }} 
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -1156,7 +1182,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
           </nav>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
+        <div className="sidebar-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', paddingLeft: '8px' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: basePalette.secundario, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 'bold', color: '#FFFFFF' }}>DJ</div>
             <div>
@@ -1168,9 +1194,9 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       </aside>
 
       {/* CONTENIDO PRINCIPAL */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <div className="main-content-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
-        <header style={{
+        <header className="header-container" style={{
           height: '70px',
           background: basePalette.bgCard,
           borderBottom: `2.5px solid ${getModuleColor(activeTab)}`,
@@ -1343,7 +1369,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                   </div>
 
                   {/* Fila de Tarjetas Vivas con identidad de color temática (Clickeables) */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+                  <div className="grid-4cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
                     <div 
                       onClick={() => setActiveTab('patients')}
                       style={{ 
@@ -1488,7 +1514,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                   </div>
 
                   {/* Cuerpo Principal */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '32px' }}>
+                  <div className="panel-2cols" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '32px' }}>
                     
                     {/* SECCIÓN IZQUIERDA */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
