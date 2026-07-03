@@ -167,8 +167,25 @@ export default function App() {
   const recognitionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  // Paleta de Colores Fija Solicitada por el Usuario
-  const basePalette = {
+  // Estado para el Modo Oscuro y persistencia
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Paleta de Colores Dinámica
+  const basePalette = darkMode ? {
+    sidebarBg: '#090f1a', // Azul petróleo muy oscuro
+    bgMain: '#0b1329', // Fondo oscuro azulado
+    bgCard: '#111b30', // Tarjetas oscuras
+    primario: '#14b8a6', // Verde quirúrgico brillante
+    secundario: '#0d9488',
+    borders: '#1e2d4a', // Bordes oscuros azulados
+    textMain: '#f8fafc', // Gris muy claro
+    textMuted: '#94a3b8',
+    textSecondary: '#cbd5e1',
+    exito: '#22c55e',
+    warning: '#f59e0b',
+    error: '#ef4444',
+    informacion: '#3b82f6'
+  } : {
     sidebarBg: '#0B1320',
     bgMain: '#F8FAFC',
     bgCard: '#FFFFFF',
@@ -177,7 +194,7 @@ export default function App() {
     borders: '#E5E7EB',
     textMain: '#1F2937',
     textMuted: '#6b7280',
-    textSecondary: '#4b5563', // Añadido para solucionar el error de TypeScript en producción
+    textSecondary: '#4b5563',
     exito: '#16A34A',
     warning: '#D97706',
     error: '#DC2626',
@@ -188,7 +205,7 @@ export default function App() {
   const getModuleColor = (tab: typeof activeTab) => {
     switch (tab) {
       case 'assistant':
-        return '#0F766E';
+        return darkMode ? '#14b8a6' : '#0F766E';
       case 'patients':
         return '#0EA5E9';
       case 'hospital':
@@ -200,11 +217,22 @@ export default function App() {
       case 'research':
         return '#8B5CF6';
       default:
-        return '#0F766E';
+        return darkMode ? '#14b8a6' : '#0F766E';
     }
   };
 
   const getModuleLightBg = (tab: typeof activeTab) => {
+    if (darkMode) {
+      switch (tab) {
+        case 'assistant': return '#0b1f1e';
+        case 'patients': return '#072030';
+        case 'hospital': return '#081730';
+        case 'or': return '#062029';
+        case 'finances': return '#092415';
+        case 'research': return '#1a1033';
+        default: return '#0b1f1e';
+      }
+    }
     switch (tab) {
       case 'assistant':
         return '#F0FDFA';
@@ -224,6 +252,17 @@ export default function App() {
   };
 
   const getModuleBorder = (tab: typeof activeTab) => {
+    if (darkMode) {
+      switch (tab) {
+        case 'assistant': return '#115e59';
+        case 'patients': return '#0369a1';
+        case 'hospital': return '#1e3a8a';
+        case 'or': return '#0e7490';
+        case 'finances': return '#15803d';
+        case 'research': return '#5b21b6';
+        default: return '#115e59';
+      }
+    }
     switch (tab) {
       case 'assistant':
         return '#99F6E4';
@@ -246,6 +285,8 @@ export default function App() {
     const savedKey = localStorage.getItem('oncogyn_openrouter_key') || '';
     setApiKey(savedKey);
     setTempApiKey(savedKey);
+    const savedDarkMode = localStorage.getItem('oncogyn_dark_mode') === 'true';
+    setDarkMode(savedDarkMode);
     fetchData();
 
     if (typeof window !== 'undefined') {
@@ -1531,7 +1572,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                         height: '350px',
                         overflow: 'hidden'
                       }}>
-                        <div className="copiloto-header" style={{ padding: '16px 20px', borderBottom: `1px solid ${getModuleBorder('assistant')}`, background: '#ccfbf1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="copiloto-header" style={{ padding: '16px 20px', borderBottom: `1px solid ${getModuleBorder('assistant')}`, background: darkMode ? '#112220' : '#ccfbf1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div className="copiloto-title-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <HeartPulse size={18} style={{ color: getModuleColor('assistant') }} />
                             <div>
@@ -1541,34 +1582,11 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                               </span>
                             </div>
                           </div>
-                          
-                          <div className="copiloto-controls" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <button 
-                              onClick={() => {
-                                setTempApiKey(apiKey);
-                                setMostrarConfig(true);
-                              }}
-                              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', color: getModuleColor('assistant') }}
-                              title="Configurar API Key"
-                            >
-                              <Settings size={18} />
-                            </button>
-                            <select
-                              value={selectedModel}
-                              onChange={(e) => setSelectedModel(e.target.value)}
-                              className="copiloto-model-select"
-                              style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '6px', border: `1px solid ${getModuleBorder('assistant')}`, outline: 'none', background: 'white', fontWeight: 500, color: getModuleColor('assistant') }}
-                            >
-                              {PROVIDERS.map((p) => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                              ))}
-                            </select>
-                          </div>
                         </div>
 
                         <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                           {chatMessages.map((msg, idx) => (
-                            <div key={idx} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', background: msg.role === 'user' ? getModuleColor('assistant') : '#ffffff', color: msg.role === 'user' ? '#ffffff' : basePalette.textMain, border: msg.role === 'system-data' ? `1px solid ${getModuleBorder('assistant')}` : 'none', padding: '12px 16px', borderRadius: '12px', maxWidth: '85%', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-line', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
+                            <div key={idx} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', background: msg.role === 'user' ? getModuleColor('assistant') : (darkMode ? '#1e293b' : '#ffffff'), color: msg.role === 'user' ? '#ffffff' : basePalette.textMain, border: msg.role === 'system-data' ? `1px solid ${getModuleBorder('assistant')}` : 'none', padding: '12px 16px', borderRadius: '12px', maxWidth: '85%', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-line', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
                               {msg.text}
                               {msg.isIA && (
                                 <span style={{ display: 'block', fontSize: '9px', color: basePalette.warning, marginTop: '6px', fontWeight: 600, textTransform: 'uppercase' }}>
@@ -1578,13 +1596,13 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                             </div>
                           ))}
                           {cargandoIA && (
-                            <div style={{ alignSelf: 'flex-start', background: '#ffffff', border: `1px solid ${getModuleBorder('assistant')}`, color: basePalette.textMuted, padding: '12px 16px', borderRadius: '12px', fontSize: '13px', fontStyle: 'italic' }}>
+                            <div style={{ alignSelf: 'flex-start', background: darkMode ? '#1e293b' : '#ffffff', border: `1px solid ${getModuleBorder('assistant')}`, color: basePalette.textMuted, padding: '12px 16px', borderRadius: '12px', fontSize: '13px', fontStyle: 'italic' }}>
                               Analizando consulta...
                             </div>
                           )}
                         </div>
 
-                        <div style={{ padding: '16px', borderTop: `1px solid ${getModuleBorder('assistant')}`, display: 'flex', gap: '8px', alignItems: 'center', background: '#e6fffa' }}>
+                        <div style={{ padding: '16px', borderTop: `1px solid ${getModuleBorder('assistant')}`, display: 'flex', gap: '8px', alignItems: 'center', background: darkMode ? '#0f2421' : '#e6fffa' }}>
                           <button 
                             onClick={toggleDictadoChat}
                             style={{
@@ -1610,7 +1628,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} 
                             placeholder={dictadoActivoChat ? "Escuchando..." : "Ej: 'internadas de hoy', 'paciente Elena'..."} 
                             disabled={cargandoIA} 
-                            style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: `1px solid ${getModuleBorder('assistant')}`, fontSize: '13px', outline: 'none', color: basePalette.textMain, background: 'white' }} 
+                            style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: `1px solid ${getModuleBorder('assistant')}`, fontSize: '13px', outline: 'none', color: basePalette.textMain, background: darkMode ? '#1e293b' : 'white' }} 
                           />
                           <button onClick={handleSendMessage} disabled={cargandoIA} style={{ background: getModuleColor('assistant'), color: 'white', border: 'none', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Send size={16} /></button>
                         </div>
@@ -1659,6 +1677,71 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                     {/* SECCIÓN DERECHA */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                       
+                      {/* Tarjeta de Ajustes de Copiloto e Interfaz */}
+                      <div style={{ background: basePalette.bgCard, padding: '24px', borderRadius: '12px', border: `1.5px solid ${basePalette.borders}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                          <Settings size={18} style={{ color: basePalette.primario }} />
+                          <h4 style={{ fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: basePalette.textMain }}>Ajustes del Portal</h4>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          {/* Configuración de Modo Oscuro */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <span style={{ fontSize: '13px', fontWeight: 600, color: basePalette.textMain }}>Modo Oscuro</span>
+                              <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '2px' }}>Alternar tema claro u oscuro</p>
+                            </div>
+                            <input 
+                              type="checkbox" 
+                              checked={darkMode} 
+                              onChange={(e) => {
+                                const val = e.target.checked;
+                                setDarkMode(val);
+                                localStorage.setItem('oncogyn_dark_mode', val ? 'true' : 'false');
+                              }}
+                              style={{ 
+                                width: '38px', 
+                                height: '20px', 
+                                cursor: 'pointer',
+                                accentColor: basePalette.primario
+                              }}
+                            />
+                          </div>
+
+                          {/* Selección de Modelo / Agente */}
+                          <div style={{ borderTop: `1px solid ${basePalette.borders}`, paddingTop: '12px' }}>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: basePalette.textMain }}>Modelo de Copiloto IA</label>
+                            <select
+                              value={selectedModel}
+                              onChange={(e) => setSelectedModel(e.target.value)}
+                              style={{ width: '100%', padding: '8px 10px', fontSize: '12px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain, fontWeight: 500 }}
+                            >
+                              {PROVIDERS.map((p) => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))}
+                            </select>
+                            <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '4px' }}>Motor de inteligencia artificial activo</p>
+                          </div>
+
+                          {/* Configuración de API Key de OpenRouter */}
+                          <div style={{ borderTop: `1px solid ${basePalette.borders}`, paddingTop: '12px' }}>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: basePalette.textMain }}>API Key de OpenRouter</label>
+                            <input 
+                              type="password" 
+                              value={apiKey} 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setApiKey(val);
+                                localStorage.setItem('oncogyn_openrouter_key', val);
+                              }} 
+                              placeholder="sk-or-v1-..." 
+                              style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, fontSize: '12px', outline: 'none', fontFamily: 'monospace', color: basePalette.textMain, background: darkMode ? '#1e293b' : 'white' }} 
+                            />
+                            <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ display: 'inline-block', fontSize: '10px', color: basePalette.secundario, marginTop: '4px', textDecoration: 'underline' }}>Crear clave en OpenRouter ↗</a>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Tarjeta de Bienvenida y Estado Proactivo */}
                       <div style={{ background: basePalette.bgCard, padding: '24px', borderRadius: '12px', border: `1px solid ${basePalette.borders}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
