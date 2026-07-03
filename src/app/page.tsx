@@ -34,7 +34,8 @@ import {
   Volume2,
   VolumeX,
   Bell,
-  Trash2
+  Trash2,
+  Menu
 } from 'lucide-react';
 
 const PROVIDERS = [
