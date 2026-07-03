@@ -2028,7 +2028,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {/* MODAL CONFIGURACIÓN API KEY */}
       {mostrarConfig && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="modal-overlay">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '450px', padding: '28px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2052,7 +2052,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {/* MODAL CONFIGURACIÓN ALERTA CLÍNICA PERSONALIZABLE */}
       {modalConfigAlertas && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="modal-overlay">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -2126,7 +2126,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {/* MODAL NUEVA CIRUGÍA (NUEVA BITÁCORA) */}
       {modalNuevaCirugia && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="modal-overlay">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '600px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -2201,7 +2201,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {/* MODAL PREPARAR EVOLUCIÓN */}
       {modalEvolucion && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="modal-overlay">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '600px', padding: '28px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2277,7 +2277,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {/* MODAL VER FICHA COMPLETA (HISTORIA CLÍNICA INTEGRAL) */}
       {modalVerFichaCompleta && pacienteFicha && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="modal-overlay">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '850px', height: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}`, overflow: 'hidden' }}>
             
             <div style={{ padding: '24px', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F0F9FF' }}>
@@ -2434,7 +2434,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {/* MODAL NUEVO PACIENTE FORMULARIO COMPLETO */}
       {modalNuevoPaciente && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="modal-overlay">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '650px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -2531,7 +2531,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {/* MODAL NUEVA CONSULTA / NOTA */}
       {modalNuevaConsulta && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="modal-overlay-high">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -2569,7 +2569,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {/* MODAL NUEVO ESTUDIO / CARGA DE ARCHIVOS */}
       {modalNuevoEstudio && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="modal-overlay-high">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -2635,7 +2635,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {/* MODAL NOTA RÁPIDA POR VOZ */}
       {modalNotaRapida && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+        <div className="modal-overlay">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
