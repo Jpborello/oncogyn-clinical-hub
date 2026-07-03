@@ -121,5 +121,38 @@
     padding: 16px !important;
     max-width: 95vw !important;
   }
+
+  /* Shrink Copiloto Header on Mobile Devices */
+  .copiloto-header {
+    padding: 8px 12px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .copiloto-title-group {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .copiloto-title-text {
+    font-size: 12px !important;
+  }
+
+  .copiloto-status-badge {
+    font-size: 9px !important;
+    margin: 0 !important;
+    display: inline-block !important;
+  }
+
+  .copiloto-controls {
+    gap: 4px !important;
+  }
+
+  .copiloto-model-select {
+    padding: 2px 4px !important;
+    font-size: 10px !important;
+    max-width: 140px !important;
+  }
 }
 

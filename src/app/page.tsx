@@ -1531,18 +1531,18 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                         height: '350px',
                         overflow: 'hidden'
                       }}>
-                        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${getModuleBorder('assistant')}`, background: '#ccfbf1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="copiloto-header" style={{ padding: '16px 20px', borderBottom: `1px solid ${getModuleBorder('assistant')}`, background: '#ccfbf1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div className="copiloto-title-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <HeartPulse size={18} style={{ color: getModuleColor('assistant') }} />
                             <div>
-                              <h3 style={{ fontSize: '14px', fontWeight: 700, color: getModuleColor('assistant') }}>🤖 Copiloto Clínico Híbrido</h3>
-                              <span style={{ fontSize: '10px', color: apiKey ? basePalette.exito : basePalette.warning, fontWeight: 600 }}>
+                              <h3 className="copiloto-title-text" style={{ fontSize: '14px', fontWeight: 700, color: getModuleColor('assistant') }}>🤖 Copiloto Clínico Híbrido</h3>
+                              <span className="copiloto-status-badge" style={{ fontSize: '10px', color: apiKey ? basePalette.exito : basePalette.warning, fontWeight: 600 }}>
                                 {apiKey ? '🟢 IA ACTIVA' : '🔵 MODO OPERATIVO LOCAL'}
                               </span>
                             </div>
                           </div>
                           
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div className="copiloto-controls" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <button 
                               onClick={() => {
                                 setTempApiKey(apiKey);
@@ -1556,6 +1556,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                             <select
                               value={selectedModel}
                               onChange={(e) => setSelectedModel(e.target.value)}
+                              className="copiloto-model-select"
                               style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '6px', border: `1px solid ${getModuleBorder('assistant')}`, outline: 'none', background: 'white', fontWeight: 500, color: getModuleColor('assistant') }}
                             >
                               {PROVIDERS.map((p) => (
