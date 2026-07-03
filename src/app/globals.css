@@ -58,8 +58,9 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   }
 
+  /* Make navigation list collapse unless open state is active */
   .sidebar-nav-container {
-    display: none;
+    display: none !important;
     flex-direction: column;
     gap: 8px;
     margin-top: 16px;
@@ -75,8 +76,12 @@
   }
 
   .main-content-container {
-    margin-top: 60px !important;
-    height: calc(100vh - 60px) !important;
+    margin-top: 56px !important; /* Matches height of collapsed mobile sidebar header */
+    height: calc(100vh - 56px) !important;
+  }
+
+  .sidebar-header {
+    margin-bottom: 0px !important;
   }
 
   .grid-4cols {
@@ -85,6 +90,13 @@
 
   .panel-2cols {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* DESKTOP EXCLUSIVE MARGIN FOR SIDEBAR HEADER */
+@media (min-width: 1025px) {
+  .sidebar-header {
+    margin-bottom: 32px !important;
   }
 }
 

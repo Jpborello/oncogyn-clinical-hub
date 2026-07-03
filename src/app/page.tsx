@@ -1021,7 +1021,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
         flexShrink: 0
       }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', paddingLeft: '8px' }}>
+          <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <HeartPulse size={28} style={{ color: basePalette.secundario }} />
               <div>
@@ -1219,7 +1219,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
           <span style={{ fontSize: '13px', color: basePalette.textMuted }}>Hoy: 2 de Julio, 2026</span>
         </header>
 
-        <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
+        <main className="main-padding" style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
           
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: basePalette.textMuted }}>
