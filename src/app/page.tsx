@@ -175,6 +175,7 @@ export default function App() {
     borders: '#E5E7EB',
     textMain: '#1F2937',
     textMuted: '#6b7280',
+    textSecondary: '#4b5563', // Añadido para solucionar el error de TypeScript en producción
     exito: '#16A34A',
     warning: '#D97706',
     error: '#DC2626',
@@ -1632,7 +1633,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                       
                       {/* Tarjeta de Bienvenida y Estado Proactivo */}
                       <div style={{ background: basePalette.bgCard, padding: '24px', borderRadius: '12px', border: `1px solid ${basePalette.borders}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <Sparkles size={18} style={{ color: basePalette.warning }} />
                             <h4 style={{ fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: basePalette.textMain }}>Asistente Proactivo</h4>
