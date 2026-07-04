@@ -1225,12 +1225,43 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
         </div>
 
         <div className="sidebar-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', paddingLeft: '8px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: basePalette.secundario, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 'bold', color: '#FFFFFF' }}>DJ</div>
-            <div>
-              <p style={{ fontSize: '13px', fontWeight: 600, color: '#FFFFFF' }}>Dr. Johnson</p>
-              <p style={{ fontSize: '11px', color: '#94a3b8' }}>Cirujano Oncólogo</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', paddingLeft: '8px', paddingRight: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: basePalette.secundario, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 'bold', color: '#FFFFFF' }}>DJ</div>
+              <div>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#FFFFFF' }}>Dr. Johnson</p>
+                <p style={{ fontSize: '11px', color: '#94a3b8' }}>Cirujano Oncólogo</p>
+              </div>
             </div>
+            <button 
+              onClick={() => {
+                setTempApiKey(apiKey);
+                setMostrarConfig(true);
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#94a3b8',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px',
+                borderRadius: '50%',
+                transition: 'background 0.2s, color 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.color = '#FFFFFF';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = '#94a3b8';
+              }}
+              title="Ajustes del Portal"
+            >
+              <Settings size={18} />
+            </button>
           </div>
         </div>
       </aside>
@@ -1677,70 +1708,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                     {/* SECCIÓN DERECHA */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                       
-                      {/* Tarjeta de Ajustes de Copiloto e Interfaz */}
-                      <div style={{ background: basePalette.bgCard, padding: '24px', borderRadius: '12px', border: `1.5px solid ${basePalette.borders}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                          <Settings size={18} style={{ color: basePalette.primario }} />
-                          <h4 style={{ fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: basePalette.textMain }}>Ajustes del Portal</h4>
-                        </div>
-                        
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                          {/* Configuración de Modo Oscuro */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                              <span style={{ fontSize: '13px', fontWeight: 600, color: basePalette.textMain }}>Modo Oscuro</span>
-                              <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '2px' }}>Alternar tema claro u oscuro</p>
-                            </div>
-                            <input 
-                              type="checkbox" 
-                              checked={darkMode} 
-                              onChange={(e) => {
-                                const val = e.target.checked;
-                                setDarkMode(val);
-                                localStorage.setItem('oncogyn_dark_mode', val ? 'true' : 'false');
-                              }}
-                              style={{ 
-                                width: '38px', 
-                                height: '20px', 
-                                cursor: 'pointer',
-                                accentColor: basePalette.primario
-                              }}
-                            />
-                          </div>
 
-                          {/* Selección de Modelo / Agente */}
-                          <div style={{ borderTop: `1px solid ${basePalette.borders}`, paddingTop: '12px' }}>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: basePalette.textMain }}>Modelo de Copiloto IA</label>
-                            <select
-                              value={selectedModel}
-                              onChange={(e) => setSelectedModel(e.target.value)}
-                              style={{ width: '100%', padding: '8px 10px', fontSize: '12px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain, fontWeight: 500 }}
-                            >
-                              {PROVIDERS.map((p) => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                              ))}
-                            </select>
-                            <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '4px' }}>Motor de inteligencia artificial activo</p>
-                          </div>
-
-                          {/* Configuración de API Key de OpenRouter */}
-                          <div style={{ borderTop: `1px solid ${basePalette.borders}`, paddingTop: '12px' }}>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: basePalette.textMain }}>API Key de OpenRouter</label>
-                            <input 
-                              type="password" 
-                              value={apiKey} 
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setApiKey(val);
-                                localStorage.setItem('oncogyn_openrouter_key', val);
-                              }} 
-                              placeholder="sk-or-v1-..." 
-                              style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, fontSize: '12px', outline: 'none', fontFamily: 'monospace', color: basePalette.textMain, background: darkMode ? '#1e293b' : 'white' }} 
-                            />
-                            <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ display: 'inline-block', fontSize: '10px', color: basePalette.secundario, marginTop: '4px', textDecoration: 'underline' }}>Crear clave en OpenRouter ↗</a>
-                          </div>
-                        </div>
-                      </div>
 
                       {/* Tarjeta de Bienvenida y Estado Proactivo */}
                       <div style={{ background: basePalette.bgCard, padding: '24px', borderRadius: '12px', border: `1px solid ${basePalette.borders}`, boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
@@ -2109,25 +2077,75 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
         </main>
       </div>
 
-      {/* MODAL CONFIGURACIÓN API KEY */}
+      {/* MODAL CONFIGURACIÓN GENERAL DEL PORTAL */}
       {mostrarConfig && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '450px', padding: '28px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '95%', maxWidth: '480px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Key size={20} style={{ color: basePalette.primario }} />
-                <h3 style={{ fontSize: '18px', fontWeight: 600, color: basePalette.textMain }}>Configuración de Copiloto IA</h3>
+                <Settings size={20} style={{ color: basePalette.primario }} />
+                <h3 style={{ fontSize: '18px', fontWeight: 600, color: basePalette.textMain }}>Ajustes del Portal</h3>
               </div>
               <button onClick={() => setMostrarConfig(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: basePalette.textMuted }}><X size={20} /></button>
             </div>
-            <p style={{ fontSize: '13px', color: basePalette.textMuted, marginBottom: '20px', lineHeight: 1.5 }}>Ingrese su API Key personal de OpenRouter para habilitar los modelos de lenguaje clínicos.</p>
-            <div style={{ marginBottom: '24px' }}>
-              <input type="password" value={tempApiKey} onChange={(e) => setTempApiKey(e.target.value)} placeholder="sk-or-v1-..." style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, fontSize: '13px', outline: 'none', fontFamily: 'monospace', color: basePalette.textMain, background: basePalette.bgCard }} />
-              <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ display: 'inline-block', fontSize: '11px', color: '#14B8A6', marginTop: '8px', textDecoration: 'underline' }}>Crear clave en OpenRouter ↗</a>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
+              
+              {/* Modo Oscuro */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: basePalette.textMain }}>Modo Oscuro</span>
+                  <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '2px' }}>Alternar tema claro u oscuro</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={darkMode} 
+                  onChange={(e) => {
+                    const val = e.target.checked;
+                    setDarkMode(val);
+                    localStorage.setItem('oncogyn_dark_mode', val ? 'true' : 'false');
+                  }}
+                  style={{ 
+                    width: '38px', 
+                    height: '20px', 
+                    cursor: 'pointer',
+                    accentColor: basePalette.primario
+                  }}
+                />
+              </div>
+
+              {/* Modelo de Copiloto */}
+              <div style={{ borderTop: `1px solid ${basePalette.borders}`, paddingTop: '16px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px', color: basePalette.textMain }}>Modelo de Copiloto IA</label>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  style={{ width: '100%', padding: '10px', fontSize: '13px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }}
+                >
+                  {PROVIDERS.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '4px' }}>Motor de inteligencia artificial activo</p>
+              </div>
+
+              {/* API Key */}
+              <div style={{ borderTop: `1px solid ${basePalette.borders}`, paddingTop: '16px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px', color: basePalette.textMain }}>API Key de OpenRouter</label>
+                <input 
+                  type="password" 
+                  value={tempApiKey} 
+                  onChange={(e) => setTempApiKey(e.target.value)} 
+                  placeholder="sk-or-v1-..." 
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, fontSize: '13px', outline: 'none', fontFamily: 'monospace', color: basePalette.textMain, background: darkMode ? '#1e293b' : 'white' }} 
+                />
+                <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ display: 'inline-block', fontSize: '11px', color: basePalette.secundario, marginTop: '6px', textDecoration: 'underline' }}>Crear clave en OpenRouter ↗</a>
+              </div>
             </div>
+
             <div style={{ display: 'flex', gap: '12px' }}>
               <button onClick={() => setMostrarConfig(false)} style={{ flex: 1, background: 'transparent', border: `1px solid ${basePalette.borders}`, borderRadius: '8px', padding: '10px', fontSize: '13px', cursor: 'pointer', color: basePalette.textMain }}>Cancelar</button>
-              <button onClick={handleSaveApiKey} style={{ flex: 1, background: basePalette.primario, color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Guardar Cambios</button>
+              <button onClick={handleSaveApiKey} style={{ flex: 1, background: basePalette.primario, color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Guardar Ajustes</button>
             </div>
           </div>
         </div>
