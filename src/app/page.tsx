@@ -317,6 +317,7 @@ export default function App() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'estudios' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'consultas' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_activas' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'config_alertas' }, () => fetchData())
       .subscribe();
 
     return () => {
@@ -365,6 +366,17 @@ export default function App() {
           notificar_whatsapp: configRes.data.notificar_whatsapp,
           telefono_notificacion: configRes.data.telefono_notificacion || ''
         });
+
+        // Sincronizar API Key y Modo Oscuro desde Supabase
+        if (configRes.data.openrouter_api_key) {
+          setApiKey(configRes.data.openrouter_api_key);
+          setTempApiKey(configRes.data.openrouter_api_key);
+          localStorage.setItem('oncogyn_openrouter_key', configRes.data.openrouter_api_key);
+        }
+        if (configRes.data.dark_mode !== undefined && configRes.data.dark_mode !== null) {
+          setDarkMode(configRes.data.dark_mode);
+          localStorage.setItem('oncogyn_dark_mode', configRes.data.dark_mode ? 'true' : 'false');
+        }
       }
 
       generarMensajeInicialDinamico(fetchedInternaciones, fetchedCirugias);
@@ -866,11 +878,29 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
     setResumenGenerado(texto);
   };
 
-  const handleSaveApiKey = () => {
+  const handleSaveApiKey = async () => {
     localStorage.setItem('oncogyn_openrouter_key', tempApiKey);
     setApiKey(tempApiKey);
+    localStorage.setItem('oncogyn_dark_mode', darkMode ? 'true' : 'false');
+
+    try {
+      // Intentar sincronizar en la base de datos única de config_alertas
+      const { data: config } = await supabase.from('config_alertas').select('id').single();
+      if (config) {
+        await supabase
+          .from('config_alertas')
+          .update({ 
+            openrouter_api_key: tempApiKey,
+            dark_mode: darkMode
+          })
+          .eq('id', config.id);
+      }
+    } catch (err) {
+      console.warn('Sincronización en Supabase no disponible:', err);
+    }
+
     setMostrarConfig(false);
-    alert('API Key de OpenRouter guardada con éxito.');
+    alert('Ajustes guardados y sincronizados con éxito.');
   };
 
   // CREACIÓN DE PACIENTE REAL EN SUPABASE
@@ -1280,11 +1310,11 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '0 32px',
+          padding: '0 24px',
           flexShrink: 0,
           transition: 'border-color 0.3s ease'
         }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 600, color: basePalette.textMain }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, color: basePalette.textMain }}>
             {activeTab === 'assistant' && 'Mi Asistente Clínico'}
             {activeTab === 'patients' && 'Base de Datos de Pacientes'}
             {activeTab === 'hospital' && 'Monitoreo de Pacientes Internadas'}
@@ -1292,7 +1322,33 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
             {activeTab === 'finances' && 'Dashboard Financiero y Honorarios'}
             {activeTab === 'research' && 'Filtros Retrospectivos de Investigación'}
           </h2>
-          <span style={{ fontSize: '13px', color: basePalette.textMuted }}>Hoy: 2 de Julio, 2026</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{ fontSize: '12px', color: basePalette.textMuted, display: 'inline-block' }} className="header-date">Hoy: 2 de Julio, 2026</span>
+            <button 
+              onClick={() => {
+                setTempApiKey(apiKey);
+                setMostrarConfig(true);
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: basePalette.textMuted,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '10px',
+                borderRadius: '50%',
+                transition: 'background 0.2s, color 0.2s',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: basePalette.borders
+              }}
+              title="Ajustes del Portal"
+            >
+              <Settings size={18} />
+            </button>
+          </div>
         </header>
 
         <main className="main-padding" style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
@@ -2104,10 +2160,21 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 <input 
                   type="checkbox" 
                   checked={darkMode} 
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const val = e.target.checked;
                     setDarkMode(val);
                     localStorage.setItem('oncogyn_dark_mode', val ? 'true' : 'false');
+                    try {
+                      const { data: config } = await supabase.from('config_alertas').select('id').single();
+                      if (config) {
+                        await supabase
+                          .from('config_alertas')
+                          .update({ dark_mode: val })
+                          .eq('id', config.id);
+                      }
+                    } catch (err) {
+                      console.warn('No se pudo sincronizar el modo oscuro en Supabase:', err);
+                    }
                   }}
                   style={{ 
                     width: '38px', 
