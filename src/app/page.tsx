@@ -568,8 +568,11 @@ export default function App() {
       setDictadoActivoChat(true);
       recognitionRef.current.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
-        setChatInput(prev => prev + (prev ? ' ' : '') + text);
+        setChatInput('');
         setDictadoActivoChat(false);
+        if (text.trim()) {
+          handleSendMessage(text.trim());
+        }
       };
       recognitionRef.current.onerror = () => setDictadoActivoChat(false);
       recognitionRef.current.onend = () => setDictadoActivoChat(false);
@@ -613,12 +616,13 @@ export default function App() {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!chatInput.trim() || cargandoIA) return;
+  const handleSendMessage = async (textOverride?: string) => {
+    const messageText = textOverride || chatInput;
+    if (!messageText.trim() || cargandoIA) return;
 
-    const userQuery = chatInput.trim();
+    const userQuery = messageText.trim();
     setChatMessages(prev => [...prev, { role: 'user', text: userQuery }]);
-    setChatInput('');
+    if (!textOverride) setChatInput('');
     setCargandoIA(true);
 
     const lowerQuery = userQuery.toLowerCase();
@@ -1652,76 +1656,234 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                     {/* SECCIÓN IZQUIERDA */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                       
-                      {/* Chat / Copiloto Clínico */}
+                      {/* Chat / Copiloto Clínico Rediseñado Premium */}
                       <div style={{
-                        background: getModuleLightBg('assistant'),
-                        borderRadius: '12px',
+                        background: darkMode ? '#0b1329' : '#ffffff',
+                        borderRadius: '16px',
                         border: `1.5px solid ${getModuleBorder('assistant')}`,
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
                         display: 'flex',
                         flexDirection: 'column',
-                        height: '350px',
+                        height: '420px',
                         overflow: 'hidden'
                       }}>
-                        <div className="copiloto-header" style={{ padding: '16px 20px', borderBottom: `1px solid ${getModuleBorder('assistant')}`, background: darkMode ? '#112220' : '#ccfbf1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div className="copiloto-title-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <HeartPulse size={18} style={{ color: getModuleColor('assistant') }} />
+                        {/* Cabecera del Copiloto con Avatar Clínico */}
+                        <div className="copiloto-header" style={{ 
+                          padding: '12px 18px', 
+                          borderBottom: `1px solid ${getModuleBorder('assistant')}`, 
+                          background: darkMode ? 'linear-gradient(135deg, #0d1e2d 0%, #0c2020 100%)' : 'linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%)', 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center' 
+                        }}>
+                          <div className="copiloto-title-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {/* Avatar Clínico Animado */}
+                            <div style={{
+                              width: '38px',
+                              height: '38px',
+                              borderRadius: '10px',
+                              background: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              position: 'relative',
+                              boxShadow: '0 4px 6px -1px rgba(15, 118, 110, 0.2)'
+                            }}>
+                              <HeartPulse size={18} style={{ color: '#ffffff' }} />
+                              {/* Punto de estado intermitente */}
+                              <span style={{
+                                position: 'absolute',
+                                bottom: '-2px',
+                                right: '-2px',
+                                width: '10px',
+                                height: '10px',
+                                borderRadius: '50%',
+                                background: apiKey ? '#22c55e' : '#f59e0b',
+                                border: `2px solid ${darkMode ? '#0b1329' : '#ffffff'}`,
+                                animation: 'pulse 2s infinite'
+                              }} />
+                            </div>
                             <div>
-                              <h3 className="copiloto-title-text" style={{ fontSize: '14px', fontWeight: 700, color: getModuleColor('assistant') }}>🤖 Copiloto Clínico Híbrido</h3>
-                              <span className="copiloto-status-badge" style={{ fontSize: '10px', color: apiKey ? basePalette.exito : basePalette.warning, fontWeight: 600 }}>
-                                {apiKey ? '🟢 IA ACTIVA' : '🔵 MODO OPERATIVO LOCAL'}
+                              <h3 className="copiloto-title-text" style={{ fontSize: '14px', fontWeight: 700, color: basePalette.textMain, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Copiloto Clínico
+                              </h3>
+                              <span className="copiloto-status-badge" style={{ fontSize: '10px', color: basePalette.textMuted, fontWeight: 500 }}>
+                                {apiKey ? 'Asistente de IA activo' : 'Modo consultas locales'}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                          {chatMessages.map((msg, idx) => (
-                            <div key={idx} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', background: msg.role === 'user' ? getModuleColor('assistant') : (darkMode ? '#1e293b' : '#ffffff'), color: msg.role === 'user' ? '#ffffff' : basePalette.textMain, border: msg.role === 'system-data' ? `1px solid ${getModuleBorder('assistant')}` : 'none', padding: '12px 16px', borderRadius: '12px', maxWidth: '85%', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-line', boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)' }}>
-                              {msg.text}
-                              {msg.isIA && (
-                                <span style={{ display: 'block', fontSize: '9px', color: basePalette.warning, marginTop: '6px', fontWeight: 600, textTransform: 'uppercase' }}>
-                                  ⚡ Procesado con IA
-                                </span>
-                              )}
-                            </div>
-                          ))}
+                        {/* Contenedor de burbujas */}
+                        <div style={{ flex: 1, padding: '16px 20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          {chatMessages.map((msg, idx) => {
+                            const isUser = msg.role === 'user';
+                            const isSys = msg.role === 'system-data';
+                            
+                            return (
+                              <div 
+                                key={idx} 
+                                style={{ 
+                                  alignSelf: isUser ? 'flex-end' : 'flex-start',
+                                  // Burbuja del usuario con gradiente turquesa, el sistema con fondo suave del modulo, el asistente en gris/azul neutro
+                                  background: isUser 
+                                    ? `linear-gradient(135deg, ${darkMode ? '#0d9488' : '#0f766e'} 0%, ${darkMode ? '#14b8a6' : '#14b8a6'} 100%)` 
+                                    : isSys 
+                                      ? (darkMode ? '#112220' : '#f0fdfa')
+                                      : (darkMode ? '#1e293b' : '#f1f5f9'),
+                                  color: isUser ? '#ffffff' : basePalette.textMain,
+                                  border: isSys ? `1.5px solid ${getModuleBorder('assistant')}` : 'none',
+                                  padding: '10px 14px', 
+                                  borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px', 
+                                  maxWidth: '85%', 
+                                  fontSize: '13px', 
+                                  lineHeight: 1.45, 
+                                  whiteSpace: 'pre-line',
+                                  boxShadow: '0 2px 4px -1px rgba(0, 0, 0, 0.03)'
+                                }}
+                              >
+                                {msg.text}
+                                {msg.isIA && (
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', color: basePalette.warning, marginTop: '6px', fontWeight: 700, letterSpacing: '0.5px' }}>
+                                    <Sparkles size={10} /> IA PROCESADA
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
                           {cargandoIA && (
-                            <div style={{ alignSelf: 'flex-start', background: darkMode ? '#1e293b' : '#ffffff', border: `1px solid ${getModuleBorder('assistant')}`, color: basePalette.textMuted, padding: '12px 16px', borderRadius: '12px', fontSize: '13px', fontStyle: 'italic' }}>
-                              Analizando consulta...
+                            <div style={{ 
+                              alignSelf: 'flex-start', 
+                              background: darkMode ? '#1e293b' : '#f1f5f9', 
+                              color: basePalette.textMuted, 
+                              padding: '10px 14px', 
+                              borderRadius: '16px 16px 16px 4px', 
+                              fontSize: '13px', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '6px' 
+                            }}>
+                              <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: basePalette.textMuted, display: 'inline-block', animation: 'pulse 1s infinite' }} />
+                              <span>Escribiendo diagnóstico...</span>
                             </div>
                           )}
                         </div>
 
-                        <div style={{ padding: '16px', borderTop: `1px solid ${getModuleBorder('assistant')}`, display: 'flex', gap: '8px', alignItems: 'center', background: darkMode ? '#0f2421' : '#e6fffa' }}>
+                        {/* Píldoras / Atajos Rápidos Táctiles (Comandos sugeridos para un solo click) */}
+                        <div style={{ 
+                          padding: '4px 16px', 
+                          display: 'flex', 
+                          gap: '8px', 
+                          overflowX: 'auto', 
+                          background: darkMode ? '#090f1a' : '#f8fafc',
+                          borderTop: `1px solid ${basePalette.borders}`,
+                          scrollbarWidth: 'none'
+                        }} className="hide-scrollbar">
+                          <button 
+                            onClick={() => handleSendMessage('¿Quiénes están internadas hoy?')}
+                            className="chat-pill-command"
+                            style={{ padding: '6px 10px', fontSize: '11px', background: darkMode ? '#1e293b' : '#ffffff', border: `1px solid ${basePalette.borders}`, borderRadius: '20px', color: basePalette.textSecondary, cursor: 'pointer', flexShrink: 0 }}
+                          >
+                            🏥 Recorrida Camas
+                          </button>
+                          <button 
+                            onClick={() => handleSendMessage('¿Qué cirugías tengo programadas para hoy?')}
+                            className="chat-pill-command"
+                            style={{ padding: '6px 10px', fontSize: '11px', background: darkMode ? '#1e293b' : '#ffffff', border: `1px solid ${basePalette.borders}`, borderRadius: '20px', color: basePalette.textSecondary, cursor: 'pointer', flexShrink: 0 }}
+                          >
+                            📅 Quirófano Hoy
+                          </button>
+                          <button 
+                            onClick={() => handleSendMessage('¿Cuánto facturé este mes?')}
+                            className="chat-pill-command"
+                            style={{ padding: '6px 10px', fontSize: '11px', background: darkMode ? '#1e293b' : '#ffffff', border: `1px solid ${basePalette.borders}`, borderRadius: '20px', color: basePalette.textSecondary, cursor: 'pointer', flexShrink: 0 }}
+                          >
+                            💰 Facturación
+                          </button>
+                          <button 
+                            onClick={() => handleSendMessage('¿Qué laboratorios hay pendientes?')}
+                            className="chat-pill-command"
+                            style={{ padding: '6px 10px', fontSize: '11px', background: darkMode ? '#1e293b' : '#ffffff', border: `1px solid ${basePalette.borders}`, borderRadius: '20px', color: basePalette.textSecondary, cursor: 'pointer', flexShrink: 0 }}
+                          >
+                            🧪 Analíticas Labs
+                          </button>
+                        </div>
+
+                        {/* Input y Botones del Chat */}
+                        <div style={{ padding: '12px 16px', borderTop: `1px solid ${basePalette.borders}`, display: 'flex', gap: '8px', alignItems: 'center', background: darkMode ? '#0e1726' : '#ffffff' }}>
                           <button 
                             onClick={toggleDictadoChat}
                             style={{
-                              background: dictadoActivoChat ? basePalette.error : 'transparent',
-                              color: dictadoActivoChat ? 'white' : getModuleColor('assistant'),
-                              border: `1px solid ${getModuleBorder('assistant')}`,
-                              borderRadius: '8px',
-                              padding: '10px',
+                              background: dictadoActivoChat ? '#ef4444' : 'transparent',
+                              color: dictadoActivoChat ? 'white' : (darkMode ? '#14b8a6' : '#0f766e'),
+                              border: `1.5px solid ${getModuleBorder('assistant')}`,
+                              borderRadius: '10px',
+                              padding: '8px',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'
+                              transition: 'all 0.2s'
                             }}
                             title="Dictar consulta por voz"
                           >
                             {dictadoActivoChat ? <MicOff size={16} /> : <Mic size={16} />}
                           </button>
-                          <input 
-                            type="text" 
-                            value={chatInput} 
-                            onChange={(e) => setChatInput(e.target.value)} 
-                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} 
-                            placeholder={dictadoActivoChat ? "Escuchando..." : "Ej: 'internadas de hoy', 'paciente Elena'..."} 
-                            disabled={cargandoIA} 
-                            style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: `1px solid ${getModuleBorder('assistant')}`, fontSize: '13px', outline: 'none', color: basePalette.textMain, background: darkMode ? '#1e293b' : 'white' }} 
-                          />
-                          <button onClick={handleSendMessage} disabled={cargandoIA} style={{ background: getModuleColor('assistant'), color: 'white', border: 'none', padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Send size={16} /></button>
+
+                          {/* Onda de sonido Siri si está dictando, de lo contrario el input estándar */}
+                          {dictadoActivoChat ? (
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', borderRadius: '10px', background: darkMode ? '#1e293b' : '#fee2e2', border: '1.5px solid #ef4444', height: '38px' }}>
+                              <span style={{ fontSize: '12px', color: '#b91c1c', fontWeight: 600 }}>Grabando audio...</span>
+                              <div className="voice-wave-container">
+                                <span className="voice-wave-bar" />
+                                <span className="voice-wave-bar" />
+                                <span className="voice-wave-bar" />
+                                <span className="voice-wave-bar" />
+                                <span className="voice-wave-bar" />
+                              </div>
+                            </div>
+                          ) : (
+                            <input 
+                              type="text" 
+                              value={chatInput} 
+                              onChange={(e) => setChatInput(e.target.value)} 
+                              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()} 
+                              placeholder="Ej: 'quirofano', 'paciente Clara'..." 
+                              disabled={cargandoIA} 
+                              style={{ 
+                                flex: 1, 
+                                padding: '8px 14px', 
+                                borderRadius: '10px', 
+                                border: `1.5px solid ${getModuleBorder('assistant')}`, 
+                                fontSize: '13px', 
+                                outline: 'none', 
+                                color: basePalette.textMain, 
+                                background: darkMode ? '#1e293b' : '#ffffff',
+                                transition: 'border-color 0.2s'
+                              }} 
+                            />
+                          )}
+
+                          {!dictadoActivoChat && (
+                            <button 
+                              onClick={() => handleSendMessage()} 
+                              disabled={cargandoIA || !chatInput.trim()} 
+                              style={{ 
+                                background: chatInput.trim() ? (darkMode ? '#14b8a6' : '#0f766e') : '#cbd5e1', 
+                                color: 'white', 
+                                border: 'none', 
+                                padding: '8px 12px', 
+                                borderRadius: '10px', 
+                                cursor: chatInput.trim() ? 'pointer' : 'default', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                transition: 'all 0.2s' 
+                              }}
+                            >
+                              <Send size={16} />
+                            </button>
+                          )}
                         </div>
                       </div>
 
