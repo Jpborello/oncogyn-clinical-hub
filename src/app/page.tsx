@@ -44,7 +44,9 @@ const PROVIDERS = [
   { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet (Anthropic)' },
   { id: 'openai/gpt-4o', name: 'GPT-4o (OpenAI)' },
   { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3 (DeepSeek)' },
-  { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B Free (Meta)' }
+  { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B Free (Meta)' },
+  { id: 'google/gemma-2-9b-it:free', name: 'Gemma 2 9B Free (Google)' },
+  { id: 'meta-llama/llama-3-8b-instruct:free', name: 'Llama 3 8B Free (Meta)' }
 ];
 
 export default function App() {
