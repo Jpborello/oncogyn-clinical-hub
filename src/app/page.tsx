@@ -1047,7 +1047,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
   const cirugiasPaciente = cirugias.filter(c => c.paciente_id === pacienteSeleccionadoId);
 
   return (
-    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', background: basePalette.bgMain, color: basePalette.textMain }}>
+    <div className={`app-container ${darkMode ? 'dark' : ''}`} style={{ display: 'flex', minHeight: '100vh', background: basePalette.bgMain, color: basePalette.textMain }}>
       
       {/* SIDEBAR */}
       <aside className="sidebar-container" style={{
@@ -2381,7 +2381,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
         <div className="modal-overlay">
           <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '850px', height: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}`, overflow: 'hidden' }}>
             
-            <div style={{ padding: '24px', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F0F9FF' }}>
+            <div style={{ padding: '24px', borderBottom: `1px solid ${basePalette.borders}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: darkMode ? '#0c253f' : '#F0F9FF' }}>
               <div>
                 <span style={{ fontSize: '11px', background: '#0EA5E9', color: 'white', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>HISTORIA CLÍNICA DIGITAL</span>
                 <h3 style={{ fontSize: '22px', fontWeight: 700, color: basePalette.textMain, marginTop: '6px' }}>{pacienteFicha.nombre_completo}</h3>
@@ -2393,7 +2393,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
             <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px' }}>
-                <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <div style={{ background: darkMode ? '#18243c' : '#F8FAFC', padding: '16px', borderRadius: '8px', border: `1px solid ${basePalette.borders}` }}>
                   <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: '#0EA5E9' }}>Datos Personales y Seguimiento</h4>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
                     <div>
@@ -2415,7 +2415,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                   </div>
                 </div>
 
-                <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ background: darkMode ? '#18243c' : '#F8FAFC', padding: '16px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
                     <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: '#0EA5E9' }}>Contactos de Paciente</h4>
                     <p style={{ fontSize: '12px', color: basePalette.textMuted, marginBottom: '8px' }}>Familiar: {pacienteFicha.telefono_familiar || 'No registrado'}</p>
@@ -2442,8 +2442,8 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </div>
               </div>
 
-              <div style={{ background: '#FFFBEB', padding: '16px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#B45309', marginBottom: '8px' }}>Diagnóstico Clínico Principal</h4>
+              <div style={{ background: darkMode ? '#2d2417' : '#FFFBEB', padding: '16px', borderRadius: '8px', border: darkMode ? '1px solid #d97706' : '1px solid #FDE68A' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, color: darkMode ? '#f59e0b' : '#B45309', marginBottom: '8px' }}>Diagnóstico Clínico Principal</h4>
                 <p style={{ fontSize: '13px', lineHeight: 1.5 }}>{pacienteFicha.diagnostico_principal || 'Sin diagnóstico registrado en Supabase.'}</p>
                 
                 <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
@@ -2455,7 +2455,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <h4 style={{ fontSize: '15px', fontWeight: 700 }}>Evolución Clínica / Notas</h4>
+                  <h4 style={{ fontSize: '15px', fontWeight: 700 }}>Evolución Clínico / Notas</h4>
                   <button 
                     onClick={() => setModalNuevaConsulta(true)}
                     style={{ background: '#0EA5E9', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', display: 'flex', gap: '4px', alignItems: 'center' }}
@@ -2469,7 +2469,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                     <p style={{ fontSize: '13px', color: basePalette.textMuted, fontStyle: 'italic' }}>No hay notas clínicas cargadas en esta ficha.</p>
                   ) : (
                     consultasPaciente.map(c => (
-                      <div key={c.id} style={{ background: '#FFFFFF', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div key={c.id} style={{ background: darkMode ? '#18243c' : '#FFFFFF', padding: '16px', borderRadius: '8px', border: `1px solid ${basePalette.borders}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: basePalette.textMuted, marginBottom: '6px' }}>
                           <span style={{ fontWeight: 'bold' }}>Motivo: {c.motivo}</span>
                           <span>Fecha: {c.fecha}</span>
@@ -2499,9 +2499,9 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                     <p style={{ fontSize: '13px', color: basePalette.textMuted, fontStyle: 'italic', gridColumn: 'span 2' }}>No hay estudios cargados en esta ficha.</p>
                   ) : (
                     estudiosPaciente.map(e => (
-                      <div key={e.id} style={{ background: '#FFFFFF', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div key={e.id} style={{ background: darkMode ? '#18243c' : '#FFFFFF', padding: '16px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <span style={{ fontSize: '10px', background: '#F0F9FF', color: '#0ea5e9', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                          <span style={{ fontSize: '10px', background: darkMode ? '#0c2e42' : '#F0F9FF', color: darkMode ? '#38bdf8' : '#0ea5e9', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                             {e.tipo}
                           </span>
                           <p style={{ fontSize: '13px', fontWeight: 600, marginTop: '6px' }}>{e.informe_crudo || 'Informe sin descripción'}</p>
@@ -2525,8 +2525,8 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
             </div>
 
-            <div style={{ padding: '16px 24px', borderTop: '1px solid #E5E7EB', display: 'flex', justifyContent: 'flex-end', background: '#F8FAFC' }}>
-              <button onClick={() => setModalVerFichaCompleta(false)} style={{ background: basePalette.textMain, color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Cerrar Ficha</button>
+            <div style={{ padding: '16px 24px', borderTop: `1px solid ${basePalette.borders}`, display: 'flex', justifyContent: 'flex-end', background: darkMode ? '#090f1a' : '#F8FAFC' }}>
+              <button onClick={() => setModalVerFichaCompleta(false)} style={{ background: darkMode ? '#1e293b' : basePalette.textMain, color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Cerrar Ficha</button>
             </div>
 
           </div>

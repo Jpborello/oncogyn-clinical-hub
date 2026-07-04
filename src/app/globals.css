@@ -216,5 +216,25 @@
   overflow-y: auto;
 }
 
+/* Dark Mode Global Form Element Overrides */
+.dark input, 
+.dark select, 
+.dark textarea {
+  background-color: #111b30 !important;
+  color: #f8fafc !important;
+  border-color: #1e2d4a !important;
+}
+
+.dark input::placeholder, 
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark select option {
+  background-color: #111b30 !important;
+  color: #f8fafc !important;
+}
+
+
 
 
