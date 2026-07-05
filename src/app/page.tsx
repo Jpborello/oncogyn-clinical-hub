@@ -142,6 +142,10 @@ export default function App() {
     motivo: ''
   });
 
+  const [modalSignos, setModalSignos] = useState(false);
+  const [internacionSeleccionada, setInternacionSeleccionada] = useState<any>(null);
+  const [formSignos, setFormSignos] = useState({ temperatura: '', drenaje_cc: '', evolucion_diaria: '' });
+
   // Configuración de Alertas Personalizables
   const [configAlertas, setConfigAlertas] = useState({
     alarma_temperatura: true,
@@ -622,6 +626,30 @@ export default function App() {
       fetchData();
     } catch (err: any) {
       alert(`Error al agendar cita: ${err.message}`);
+    }
+  };
+
+  const handleGuardarSignos = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!internacionSeleccionada) return;
+
+    try {
+      const { error } = await supabase
+        .from('internaciones')
+        .update({
+          temperatura: formSignos.temperatura ? Number(formSignos.temperatura) : null,
+          drenaje_cc: formSignos.drenaje_cc ? Number(formSignos.drenaje_cc) : null,
+          evolucion_diaria: formSignos.evolucion_diaria
+        })
+        .eq('id', internacionSeleccionada.id);
+
+      if (error) throw error;
+
+      alert('¡Signos y evolución actualizados con éxito!');
+      setModalSignos(false);
+      fetchData();
+    } catch (err: any) {
+      alert(`Error al guardar signos: ${err.message}`);
     }
   };
 
@@ -2585,7 +2613,20 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                         </button>
 
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button onClick={() => alert('Actualización manual de signos en desarrollo.')} style={{ flex: 1, background: 'transparent', border: `1px solid ${basePalette.borders}`, borderRadius: '8px', padding: '8px', fontSize: '12px', cursor: 'pointer', color: basePalette.textMain }}>Signos</button>
+                          <button 
+                            onClick={() => {
+                              setInternacionSeleccionada(i);
+                              setFormSignos({
+                                temperatura: i.temperatura ? String(i.temperatura) : '',
+                                drenaje_cc: i.drenaje_cc ? String(i.drenaje_cc) : '',
+                                evolucion_diaria: i.evolucion_diaria || ''
+                              });
+                              setModalSignos(true);
+                            }} 
+                            style={{ flex: 1, background: 'transparent', border: `1px solid ${basePalette.borders}`, borderRadius: '8px', padding: '8px', fontSize: '12px', cursor: 'pointer', color: basePalette.textMain }}
+                          >
+                            Signos
+                          </button>
                           <button 
                             onClick={async () => {
                               await supabase.from('internaciones').delete().eq('id', i.id);
@@ -3039,6 +3080,67 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
               <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                 <button type="button" onClick={() => setModalNuevaCita(false)} style={{ flex: 1, background: 'transparent', border: `1px solid ${basePalette.borders}`, borderRadius: '8px', padding: '10px', fontSize: '13px', cursor: 'pointer', color: basePalette.textMain }}>Cancelar</button>
                 <button type="submit" style={{ flex: 1, background: '#0EA5E9', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Programar Cita</button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalSignos && internacionSeleccionada && (
+        <div className="modal-overlay">
+          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '450px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: basePalette.textMain }}>Registrar Signos y Evolución</h3>
+              <button onClick={() => setModalSignos(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: basePalette.textMuted }}><X size={20} /></button>
+            </div>
+
+            <p style={{ fontSize: '12px', color: basePalette.textMuted, marginBottom: '16px' }}>
+              Paciente: <strong>{internacionSeleccionada.pacientes?.nombre_completo}</strong> <br />
+              Habitación: <strong>{internacionSeleccionada.habitacion}</strong> - Cama: <strong>{internacionSeleccionada.cama || '-'}</strong>
+            </p>
+
+            <form onSubmit={handleGuardarSignos} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Temperatura (°C)</label>
+                  <input 
+                    type="number" 
+                    step="0.1" 
+                    placeholder="Ej: 36.5" 
+                    value={formSignos.temperatura} 
+                    onChange={(e) => setFormSignos({...formSignos, temperatura: e.target.value})} 
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} 
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Drenaje acumulado (cc)</label>
+                  <input 
+                    type="number" 
+                    placeholder="Ej: 50" 
+                    value={formSignos.drenaje_cc} 
+                    onChange={(e) => setFormSignos({...formSignos, drenaje_cc: e.target.value})} 
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Evolución / Observaciones</label>
+                <textarea 
+                  rows={4} 
+                  placeholder="Ej: Paciente lúcida, afebril, drenaje seroso..." 
+                  value={formSignos.evolucion_diaria} 
+                  onChange={(e) => setFormSignos({...formSignos, evolucion_diaria: e.target.value})} 
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', resize: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                <button type="button" onClick={() => setModalSignos(false)} style={{ flex: 1, background: 'transparent', border: `1px solid ${basePalette.borders}`, borderRadius: '8px', padding: '10px', fontSize: '13px', cursor: 'pointer', color: basePalette.textMain }}>Cancelar</button>
+                <button type="submit" style={{ flex: 1, background: '#2563EB', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Guardar Signos</button>
               </div>
 
             </form>
