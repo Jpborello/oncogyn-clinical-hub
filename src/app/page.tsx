@@ -54,7 +54,12 @@ const PROVIDERS = [
 export default function App() {
   const [activeTab, setActiveTab] = useState<'assistant' | 'patients' | 'hospital' | 'or' | 'finances' | 'research'>('assistant');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedModel, setSelectedModel] = useState('google/gemini-2.5-pro');
+  const [selectedModel, setSelectedModel] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('oncogyn_selected_model') || 'google/gemini-2.5-pro';
+    }
+    return 'google/gemini-2.5-pro';
+  });
 
   // Datos del consultorio / Supabase
   const [pacientes, setPacientes] = useState<any[]>([]);
@@ -92,7 +97,10 @@ export default function App() {
     fecha_inicio_consulta: '',
     pole: false,
     brca1: false,
-    brca2: false
+    brca2: false,
+    estado: 'consulta',
+    habitacion: '',
+    cama: ''
   });
 
   const [formConsulta, setFormConsulta] = useState({
@@ -113,12 +121,25 @@ export default function App() {
   const [formCirugia, setFormCirugia] = useState({
     paciente_id: '',
     fecha: '',
+    hora: '08:00',
     diagnostico_preop: '',
     diagnostico_postop: '',
     procedimiento: '',
     duracion_minutos: '',
     perdida_sanguinea_cc: '',
     complicaciones: ''
+  });
+
+  const [citas, setCitas] = useState<any[]>([]);
+  const [notificaciones, setNotificaciones] = useState<{ id: string; titulo: string; cuerpo: string; fecha: string; leida: boolean }[]>([]);
+  const [mostrarPanelNotificaciones, setMostrarPanelNotificaciones] = useState(false);
+  const [notifPermission, setNotifPermission] = useState('default');
+  const [modalNuevaCita, setModalNuevaCita] = useState(false);
+  const [formCita, setFormCita] = useState({
+    paciente_id: '',
+    fecha: '',
+    hora: '10:00',
+    motivo: ''
   });
 
   // Configuración de Alertas Personalizables
@@ -291,6 +312,18 @@ export default function App() {
     setTempApiKey(savedKey);
     const savedDarkMode = localStorage.getItem('oncogyn_dark_mode') === 'true';
     setDarkMode(savedDarkMode);
+    
+    // Cargar historial de notificaciones desde localStorage
+    const savedNotifs = localStorage.getItem('oncogyn_notifications_history');
+    if (savedNotifs) {
+      setNotificaciones(JSON.parse(savedNotifs));
+    }
+    
+    // Cargar permisos de notificación del navegador
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotifPermission(Notification.permission);
+    }
+    
     fetchData();
 
     if (typeof window !== 'undefined') {
@@ -316,8 +349,14 @@ export default function App() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'finanzas' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'estudios' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'consultas' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_activas' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_activas' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          triggerNotification('⚠️ Alerta Clínica Crítica', payload.new.descripcion);
+        }
+        fetchData();
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'config_alertas' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'citas' }, () => fetchData())
       .subscribe();
 
     return () => {
@@ -328,7 +367,7 @@ export default function App() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [pRes, iRes, cRes, fRes, eRes, conRes, configRes, aRes] = await Promise.all([
+      const [pRes, iRes, cRes, fRes, eRes, conRes, configRes, aRes, citasRes] = await Promise.all([
         supabase.from('pacientes').select('*'),
         supabase.from('internaciones').select('*, pacientes(nombre_completo, diagnostico_principal)'),
         supabase.from('cirugias').select('*, pacientes(nombre_completo)'),
@@ -336,7 +375,8 @@ export default function App() {
         supabase.from('estudios').select('*'),
         supabase.from('consultas').select('*'),
         supabase.from('config_alertas').select('*').single(),
-        supabase.from('alertas_activas').select('*, pacientes(nombre_completo)')
+        supabase.from('alertas_activas').select('*, pacientes(nombre_completo)'),
+        supabase.from('citas').select('*, pacientes(nombre_completo)')
       ]);
 
       const fetchedPacientes = pRes.data || [];
@@ -346,6 +386,7 @@ export default function App() {
       const fetchedEstudios = eRes.data || [];
       const fetchedConsultas = conRes.data || [];
       const fetchedAlertas = aRes.data || [];
+      const fetchedCitas = citasRes ? (citasRes.data || []) : [];
 
       setPacientes(fetchedPacientes);
       setInternaciones(fetchedInternaciones);
@@ -354,6 +395,7 @@ export default function App() {
       setEstudios(fetchedEstudios);
       setConsultas(fetchedConsultas);
       setAlertasActivas(fetchedAlertas);
+      setCitas(fetchedCitas);
 
       if (configRes.data) {
         setConfigAlertas({
@@ -377,12 +419,16 @@ export default function App() {
           setDarkMode(configRes.data.dark_mode);
           localStorage.setItem('oncogyn_dark_mode', configRes.data.dark_mode ? 'true' : 'false');
         }
+        if (configRes.data.modelo_ia) {
+          setSelectedModel(configRes.data.modelo_ia);
+          localStorage.setItem('oncogyn_selected_model', configRes.data.modelo_ia);
+        }
       }
 
       generarMensajeInicialDinamico(fetchedInternaciones, fetchedCirugias);
 
     } catch (err) {
-      console.error(err);
+      console.error('Error al cargar datos de Supabase:', err);
     } finally {
       setLoading(false);
     }
@@ -430,6 +476,152 @@ export default function App() {
 
     } catch (error) {
       console.error('Error al emitir sonido clínico:', error);
+    }
+  };
+
+  const triggerNotification = async (titulo: string, cuerpo: string) => {
+    playClinicalAlertSound();
+
+    const nuevaNotif = {
+      id: Math.random().toString(),
+      titulo,
+      cuerpo,
+      fecha: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }),
+      leida: false
+    };
+
+    setNotificaciones(prev => {
+      const updated = [nuevaNotif, ...prev].slice(0, 50);
+      localStorage.setItem('oncogyn_notifications_history', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        try {
+          if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.ready;
+            reg.showNotification(titulo, {
+              body: cuerpo,
+              icon: '/favicon.ico',
+              vibrate: [200, 100, 200],
+              tag: 'oncogyn-alert'
+            } as any);
+          } else {
+            new Notification(titulo, { body: cuerpo });
+          }
+        } catch (e) {
+          console.warn('Error mostrando notificación nativa:', e);
+          new Notification(titulo, { body: cuerpo });
+        }
+      }
+    }
+  };
+
+  const requestNotificationPermission = () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      Notification.requestPermission().then(permission => {
+        setNotifPermission(permission);
+      });
+    }
+  };
+
+  // Planificador en segundo plano (Background Checker) para Citas, Cirugías y Recorridas
+  useEffect(() => {
+    const checkScheduledEvents = () => {
+      if (loading || pacientes.length === 0) return;
+
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const triggered = JSON.parse(localStorage.getItem('oncogyn_triggered_alerts') || '{}');
+      let triggeredUpdated = false;
+
+      const checkAndTrigger = (id: string, eventTime: Date, eventName: string, detail: string) => {
+        const diffMs = eventTime.getTime() - now.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+
+        const key1d = `${id}_1d`;
+        if (diffMins >= 1420 && diffMins <= 1445 && !triggered[key1d]) {
+          triggerNotification(`📅 Mañana: ${eventName}`, `${detail} (en 24 horas)`);
+          triggered[key1d] = true;
+          triggeredUpdated = true;
+        }
+
+        const key20m = `${id}_20m`;
+        if (diffMins >= 15 && diffMins <= 22 && !triggered[key20m]) {
+          triggerNotification(`⚠️ En 20 minutos: ${eventName}`, `${detail} (a las ${eventTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs)`);
+          triggered[key20m] = true;
+          triggeredUpdated = true;
+        }
+      };
+
+      cirugias.forEach(c => {
+        if (!c.fecha) return;
+        const horaStr = c.hora || '08:00';
+        const eventTime = new Date(`${c.fecha}T${horaStr}:00`);
+        if (!isNaN(eventTime.getTime())) {
+          const pacName = c.pacientes?.nombre_completo || 'Paciente';
+          checkAndTrigger(`cirugia_${c.id}`, eventTime, 'Cirugía Programada', `${pacName} - ${c.procedimiento}`);
+        }
+      });
+
+      citas.forEach(cita => {
+        if (!cita.fecha || !cita.hora) return;
+        const eventTime = new Date(`${cita.fecha}T${cita.hora}:00`);
+        if (!isNaN(eventTime.getTime())) {
+          const pac = pacientes.find(p => p.id === cita.paciente_id);
+          const pacName = pac ? pac.nombre_completo : 'Paciente';
+          checkAndTrigger(`cita_${cita.id}`, eventTime, 'Cita Médica', `${pacName} - ${cita.motivo || 'Consulta'}`);
+        }
+      });
+
+      const currentYear = now.getFullYear();
+      const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const currentDay = String(now.getDate()).padStart(2, '0');
+      const datePrefix = `${currentYear}-${currentMonth}-${currentDay}`;
+
+      const recorridaMañana = new Date(`${datePrefix}T07:45:00`);
+      checkAndTrigger(`recorrida_morning_${datePrefix}`, recorridaMañana, 'Recorrida de Hospital', 'Pase de sala de internación (Hab. 301, 305)');
+
+      const recorridaTarde = new Date(`${datePrefix}T18:00:00`);
+      checkAndTrigger(`recorrida_evening_${datePrefix}`, recorridaTarde, 'Seguimientos Quirúrgicos', 'Control de postoperatorios en piso');
+
+      if (triggeredUpdated) {
+        localStorage.setItem('oncogyn_triggered_alerts', JSON.stringify(triggered));
+      }
+    };
+
+    checkScheduledEvents();
+    const interval = setInterval(checkScheduledEvents, 30000);
+
+    return () => clearInterval(interval);
+  }, [cirugias, citas, pacientes, loading]);
+
+  const handleCrearCita = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase
+        .from('citas')
+        .insert({
+          paciente_id: formCita.paciente_id,
+          fecha: formCita.fecha,
+          hora: formCita.hora || '10:00',
+          motivo: formCita.motivo
+        });
+
+      if (error) throw error;
+
+      alert('¡Cita agendada con éxito!');
+      setModalNuevaCita(false);
+      setFormCita({
+        paciente_id: '',
+        fecha: '',
+        hora: '10:00',
+        motivo: ''
+      });
+      fetchData();
+    } catch (err: any) {
+      alert(`Error al agendar cita: ${err.message}`);
     }
   };
 
@@ -886,6 +1078,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
     localStorage.setItem('oncogyn_openrouter_key', tempApiKey);
     setApiKey(tempApiKey);
     localStorage.setItem('oncogyn_dark_mode', darkMode ? 'true' : 'false');
+    localStorage.setItem('oncogyn_selected_model', selectedModel);
 
     try {
       // Intentar sincronizar en la base de datos única de config_alertas
@@ -895,7 +1088,8 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
           .from('config_alertas')
           .update({ 
             openrouter_api_key: tempApiKey,
-            dark_mode: darkMode
+            dark_mode: darkMode,
+            modelo_ia: selectedModel
           })
           .eq('id', config.id);
       }
@@ -917,7 +1111,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
         brca2: formPaciente.brca2
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('pacientes')
         .insert({
           nombre_completo: formPaciente.nombre_completo,
@@ -931,10 +1125,28 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
           diagnostico_principal: formPaciente.diagnostico_principal || '',
           hospital_atencion: formPaciente.hospital_atencion || '',
           fecha_inicio_consulta: formPaciente.fecha_inicio_consulta || null,
-          mutaciones: mutacionesJSON
-        });
+          mutaciones: mutacionesJSON,
+          estado: formPaciente.estado
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      if (data && formPaciente.estado === 'internacion') {
+        const { error: internError } = await supabase
+          .from('internaciones')
+          .insert({
+            paciente_id: data.id,
+            habitacion: formPaciente.habitacion,
+            cama: formPaciente.cama || '',
+            fecha_ingreso: new Date().toISOString().split('T')[0],
+            temperatura: 36.5,
+            drenaje_cc: 0,
+            laboratorio_pendiente: false
+          });
+        if (internError) throw internError;
+      }
 
       alert('¡Paciente creado con éxito en Supabase!');
       setModalNuevoPaciente(false);
@@ -952,7 +1164,10 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
         fecha_inicio_consulta: '',
         pole: false,
         brca1: false,
-        brca2: false
+        brca2: false,
+        estado: 'consulta',
+        habitacion: '',
+        cama: ''
       });
       fetchData();
     } catch (err: any) {
@@ -969,6 +1184,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
         .insert({
           paciente_id: formCirugia.paciente_id,
           fecha: formCirugia.fecha || new Date().toISOString().split('T')[0],
+          hora: formCirugia.hora || '08:00',
           diagnostico_preop: formCirugia.diagnostico_preop,
           diagnostico_postop: formCirugia.diagnostico_postop,
           procedimiento: formCirugia.procedimiento,
@@ -984,6 +1200,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       setFormCirugia({
         paciente_id: '',
         fecha: '',
+        hora: '08:00',
         diagnostico_preop: '',
         diagnostico_postop: '',
         procedimiento: '',
@@ -1067,15 +1284,44 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
   const totalIngresos = finanzas.filter(f => f.tipo === 'ingreso').reduce((sum, f) => sum + Number(f.monto), 0);
 
-  const TIMELINE_DATA = [
-    { hora: '07:45', titulo: 'Ingreso Hospital', desc: 'Recorrida de sala de internación (Hab. 301, 305)' },
-    { hora: '08:00', titulo: 'Cirugía de Guardia', desc: 'Elena Rostova - Citorreducción primaria (Ovario)' },
-    { hora: '11:30', titulo: 'Consultorio Externo', desc: 'Atención de pacientes programados en agenda' },
-    { hora: '15:00', titulo: 'Ateneo Ginecología', desc: 'Discusión de casos complejos multidisciplinarios' },
-    { hora: '18:00', titulo: 'Seguimientos Quirúrgicos', desc: 'Control de postoperatorios y firmas de evolución' }
-  ];
+  const getTimelineData = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    const items = [
+      { hora: '07:45', titulo: '🏥 Recorrida Hospital', desc: 'Recorrida de sala de internación', tipo: 'rutina' },
+      { hora: '15:00', titulo: '👥 Ateneo Ginecología', desc: 'Discusión de casos complejos multidisciplinarios', tipo: 'rutina' },
+      { hora: '18:00', titulo: '📋 Seguimientos Quirúrgicos', desc: 'Control de postoperatorios y firmas de evolución', tipo: 'rutina' }
+    ];
+    
+    cirugias.forEach(c => {
+      if (c.fecha === todayStr) {
+        items.push({
+          hora: c.hora || '08:00',
+          titulo: `🔪 Cirugía: ${c.pacientes?.nombre_completo || 'Paciente'}`,
+          desc: `${c.procedimiento} (${c.diagnostico_preop || 'Preop'})`,
+          tipo: 'cirugia'
+        });
+      }
+    });
+    
+    citas.forEach(cita => {
+      if (cita.fecha === todayStr) {
+        const pac = pacientes.find(p => p.id === cita.paciente_id);
+        items.push({
+          hora: cita.hora || '10:00',
+          titulo: `📅 Cita: ${pac ? pac.nombre_completo : 'Paciente'}`,
+          desc: cita.motivo || 'Consulta programada',
+          tipo: 'cita'
+        });
+      }
+    });
 
-  const proximaCirugiaHora = cirugias.length > 0 ? '08:00 hs' : 'Sin programar';
+    return items.sort((a, b) => a.hora.localeCompare(b.hora));
+  };
+
+  const TIMELINE_DATA = getTimelineData();
+
+  const proximaCirugiaHora = cirugias.length > 0 ? (cirugias[0].hora ? cirugias[0].hora + ' hs' : '08:00 hs') : 'Sin programar';
   const habitacionesInternadas = internaciones.map(i => i.habitacion).sort().join(', ') || 'Ninguna';
 
   // Paciente detallado para ver ficha
@@ -1328,6 +1574,118 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span style={{ fontSize: '12px', color: basePalette.textMuted, display: 'inline-block' }} className="header-date">Hoy: 2 de Julio, 2026</span>
+            
+            {/* CAMPANA DE NOTIFICACIONES */}
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setMostrarPanelNotificaciones(!mostrarPanelNotificaciones)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: basePalette.textMuted,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '10px',
+                  borderRadius: '50%',
+                  transition: 'background 0.2s, color 0.2s',
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                  borderColor: basePalette.borders
+                }}
+                title="Centro de Notificaciones"
+              >
+                <Bell size={18} />
+                {notificaciones.filter(n => !n.leida).length > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    background: '#EF4444',
+                    color: 'white',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    borderRadius: '50%',
+                    width: '18px',
+                    height: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: `2px solid ${basePalette.bgCard}`
+                  }}>
+                    {notificaciones.filter(n => !n.leida).length}
+                  </span>
+                )}
+              </button>
+
+              {mostrarPanelNotificaciones && (
+                <div style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: '48px',
+                  width: '360px',
+                  background: basePalette.bgCard,
+                  borderRadius: '12px',
+                  border: `1px solid ${basePalette.borders}`,
+                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                  zIndex: 100,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  maxHeight: '400px'
+                }}>
+                  <div style={{ padding: '16px', borderBottom: `1px solid ${basePalette.borders}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 600, fontSize: '14px', color: basePalette.textMain }}>Notificaciones</span>
+                    <button 
+                      onClick={() => {
+                        setNotificaciones(prev => {
+                          const updated = prev.map(n => ({ ...n, leida: true }));
+                          localStorage.setItem('oncogyn_notifications_history', JSON.stringify(updated));
+                          return updated;
+                        });
+                      }}
+                      style={{ background: 'transparent', border: 'none', color: '#0EA5E9', fontSize: '11px', cursor: 'pointer', fontWeight: 600 }}
+                    >
+                      Marcar todo leído
+                    </button>
+                  </div>
+                  <div style={{ overflowY: 'auto', flex: 1 }}>
+                    {notificaciones.length === 0 ? (
+                      <div style={{ padding: '24px', textAlign: 'center', color: basePalette.textMuted, fontSize: '12px', fontStyle: 'italic' }}>
+                        Sin notificaciones recientes.
+                      </div>
+                    ) : (
+                      notificaciones.map((n) => (
+                        <div key={n.id} style={{
+                          padding: '12px 16px',
+                          borderBottom: `1px solid ${basePalette.borders}`,
+                          background: n.leida ? 'transparent' : (darkMode ? '#1e293b' : '#f0fdfa'),
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          setNotificaciones(prev => {
+                            const updated = prev.map(item => item.id === n.id ? { ...item, leida: true } : item);
+                            localStorage.setItem('oncogyn_notifications_history', JSON.stringify(updated));
+                            return updated;
+                          });
+                        }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <span style={{ fontWeight: 600, fontSize: '12.5px', color: basePalette.textMain }}>{n.titulo}</span>
+                            <span style={{ fontSize: '10px', color: basePalette.textMuted }}>{n.fecha}</span>
+                          </div>
+                          <span style={{ fontSize: '11.5px', color: basePalette.textSecondary }}>{n.cuerpo}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={() => {
                 setTempApiKey(apiKey);
@@ -1895,33 +2253,58 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                         padding: '24px',
                         boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-                          <Clock size={18} style={{ color: '#06B6D4' }} />
-                          <h4 style={{ fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: basePalette.textMain }}>📅 Agenda y Cronograma del Día</h4>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Clock size={18} style={{ color: '#06B6D4' }} />
+                            <h4 style={{ fontSize: '15px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: basePalette.textMain }}>📅 Agenda y Cronograma</h4>
+                          </div>
+                          <button 
+                            onClick={() => setModalNuevaCita(true)}
+                            style={{
+                              background: '#06B6D4',
+                              color: 'white',
+                              border: 'none',
+                              padding: '5px 10px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Plus size={12} />
+                            <span>Agendar Cita</span>
+                          </button>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', borderLeft: '2px solid #A5F3FC', marginLeft: '12px', paddingLeft: '24px', gap: '20px' }}>
-                          {TIMELINE_DATA.map((item, idx) => (
-                            <div key={idx} style={{ position: 'relative' }}>
-                              <span style={{
-                                position: 'absolute',
-                                left: '-31px',
-                                top: '2px',
-                                width: '12px',
-                                height: '12px',
-                                borderRadius: '50%',
-                                background: idx === 1 ? '#06B6D4' : '#cbd5e1',
-                                border: '2px solid #ffffff'
-                              }} />
-                              <div style={{ display: 'flex', gap: '16px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#06B6D4', minWidth: '45px' }}>{item.hora}</span>
-                                <div>
-                                  <h5 style={{ fontSize: '13px', fontWeight: 600, color: basePalette.textMain }}>{item.titulo}</h5>
-                                  <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '2px' }}>{item.desc}</p>
+                          {TIMELINE_DATA.length === 0 ? (
+                            <p style={{ fontSize: '12px', color: basePalette.textMuted, fontStyle: 'italic' }}>Sin actividades programadas para hoy.</p>
+                          ) : (
+                            TIMELINE_DATA.map((item, idx) => (
+                              <div key={idx} style={{ position: 'relative' }}>
+                                <span style={{
+                                  position: 'absolute',
+                                  left: '-31px',
+                                  top: '2px',
+                                  width: '12px',
+                                  height: '12px',
+                                  borderRadius: '50%',
+                                  background: item.tipo === 'cirugia' ? '#EF4444' : (item.tipo === 'cita' ? '#2563EB' : '#06B6D4'),
+                                  border: '2px solid #ffffff'
+                                }} />
+                                <div style={{ display: 'flex', gap: '16px' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#06B6D4', minWidth: '45px' }}>{item.hora}</span>
+                                  <div>
+                                    <h5 style={{ fontSize: '13px', fontWeight: 600, color: basePalette.textMain }}>{item.titulo}</h5>
+                                    <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '2px' }}>{item.desc}</p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))
+                          )}
                         </div>
                       </div>
 
@@ -2055,6 +2438,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                       <tr style={{ borderBottom: '1px solid #BAE6FD', color: basePalette.textMuted }}>
                         <th style={{ padding: '12px' }}>Paciente</th>
                         <th style={{ padding: '12px' }}>DNI</th>
+                        <th style={{ padding: '12px' }}>Estado</th>
                         <th style={{ padding: '12px' }}>Obra Social</th>
                         <th style={{ padding: '12px' }}>Diagnóstico</th>
                         <th style={{ padding: '12px' }}>Nacionalidad</th>
@@ -2062,26 +2446,68 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredPatients.map((p) => (
-                        <tr key={p.id} style={{ borderBottom: `1px solid ${basePalette.borders}` }}>
-                          <td style={{ padding: '16px 12px', fontWeight: 600, color: basePalette.textMain }}>{p.nombre_completo}</td>
-                          <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.dni}</td>
-                          <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.obra_social || 'Particular'}</td>
-                          <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.diagnostico_principal || 'Sin diagnóstico cargado'}</td>
-                          <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.nacionalidad || 'Argentina'}</td>
-                          <td style={{ padding: '16px 12px' }}>
-                            <button 
-                              onClick={() => {
-                                setPacienteSeleccionadoId(p.id);
-                                setModalVerFichaCompleta(true);
-                              }}
-                              style={{ background: '#f0fdfa', border: '1px solid #0EA5E9', color: '#0EA5E9', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                            >
-                              Ver Ficha / Historia
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {filteredPatients.map((p) => {
+                        let badgeBg = '#E5E7EB';
+                        let badgeText = '#374151';
+                        let stateLabel = 'Consulta';
+                        switch (p.estado) {
+                          case 'internacion':
+                            badgeBg = '#fee2e2';
+                            badgeText = '#b91c1c';
+                            stateLabel = 'Internada';
+                            break;
+                          case 'observacion':
+                            badgeBg = '#fef3c7';
+                            badgeText = '#b45309';
+                            stateLabel = 'En Observación';
+                            break;
+                          case 'quirófano':
+                            badgeBg = '#ecfeff';
+                            badgeText = '#0891b2';
+                            stateLabel = 'En Quirófano';
+                            break;
+                          case 'seguimiento':
+                            badgeBg = '#f3e8ff';
+                            badgeText = '#6b21a8';
+                            stateLabel = 'Seguimiento';
+                            break;
+                          case 'alta':
+                            badgeBg = '#d1fae5';
+                            badgeText = '#065f46';
+                            stateLabel = 'Alta';
+                            break;
+                          default:
+                            badgeBg = '#dcfce7';
+                            badgeText = '#166534';
+                            stateLabel = 'Consulta';
+                        }
+
+                        return (
+                          <tr key={p.id} style={{ borderBottom: `1px solid ${basePalette.borders}` }}>
+                            <td style={{ padding: '16px 12px', fontWeight: 600, color: basePalette.textMain }}>{p.nombre_completo}</td>
+                            <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.dni}</td>
+                            <td style={{ padding: '16px 12px' }}>
+                              <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '12px', background: badgeBg, color: badgeText, whiteSpace: 'nowrap' }}>
+                                {stateLabel}
+                              </span>
+                            </td>
+                            <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.obra_social || 'Particular'}</td>
+                            <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.diagnostico_principal || 'Sin diagnóstico cargado'}</td>
+                            <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.nacionalidad || 'Argentina'}</td>
+                            <td style={{ padding: '16px 12px' }}>
+                              <button 
+                                onClick={() => {
+                                  setPacienteSeleccionadoId(p.id);
+                                  setModalVerFichaCompleta(true);
+                                }}
+                                style={{ background: '#f0fdfa', border: '1px solid #0EA5E9', color: '#0EA5E9', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                              >
+                                Ver Ficha / Historia
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2094,8 +2520,14 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                     <div key={i.id} style={{ background: basePalette.bgCard, borderRadius: '12px', border: '1.5px solid #2563EB', padding: '24px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       
                       <div>
-                        <div style={{ position: 'absolute', top: '24px', right: '24px', background: '#EFF6FF', color: '#2563EB', fontWeight: 'bold', fontSize: '14px', padding: '4px 10px', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
-                          Hab {i.habitacion}
+                        <div style={{ position: 'absolute', top: '24px', right: '24px', background: darkMode ? '#1e293b' : '#EFF6FF', color: '#2563EB', fontWeight: 'bold', fontSize: '13px', padding: '4px 10px', borderRadius: '8px', border: `1px solid ${darkMode ? '#1e3a8a' : '#BFDBFE'}`, display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span>Hab {i.habitacion}</span>
+                          {i.cama && (
+                            <>
+                              <span style={{ color: basePalette.textMuted }}>|</span>
+                              <span>Cama {i.cama}</span>
+                            </>
+                          )}
                         </div>
                         <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '6px', color: basePalette.textMain }}>{i.pacientes?.nombre_completo || 'Paciente'}</h3>
                         <p style={{ fontSize: '12px', color: basePalette.textMuted, marginBottom: '16px' }}>{i.pacientes?.diagnostico_principal}</p>
@@ -2374,6 +2806,31 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 />
                 <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ display: 'inline-block', fontSize: '11px', color: basePalette.secundario, marginTop: '6px', textDecoration: 'underline' }}>Crear clave en OpenRouter ↗</a>
               </div>
+
+              {/* Notificaciones del Navegador */}
+              <div style={{ borderTop: `1px solid ${basePalette.borders}`, paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: basePalette.textMain }}>Notificaciones de Sistema (PWA)</span>
+                  <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '2px' }}>Alertas de cirugías, visitas y signos vitales</p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={requestNotificationPermission} 
+                  style={{
+                    background: notifPermission === 'granted' ? basePalette.exito : basePalette.primario,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                  disabled={notifPermission === 'granted'}
+                >
+                  {notifPermission === 'granted' ? 'Habilitado' : 'Solicitar'}
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -2485,14 +2942,18 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Procedimiento *</label>
-                  <input type="text" required placeholder="Ej: Citorreducción ovárica" value={formCirugia.procedimiento} onChange={(e) => setFormCirugia({...formCirugia, procedimiento: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
+                  <input type="text" required placeholder="Ej: Citorreducción ovárica" value={formCirugia.procedimiento} onChange={(e) => setFormCirugia({...formCirugia, procedimiento: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Fecha de Cirugía</label>
-                  <input type="date" value={formCirugia.fecha} onChange={(e) => setFormCirugia({...formCirugia, fecha: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
+                  <input type="date" value={formCirugia.fecha} onChange={(e) => setFormCirugia({...formCirugia, fecha: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Hora</label>
+                  <input type="time" value={formCirugia.hora} onChange={(e) => setFormCirugia({...formCirugia, hora: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
                 </div>
               </div>
 
@@ -2526,6 +2987,58 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
               <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                 <button type="button" onClick={() => setModalNuevaCirugia(false)} style={{ flex: 1, background: 'transparent', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px', fontSize: '13px', cursor: 'pointer', color: basePalette.textMain }}>Cancelar</button>
                 <button type="submit" style={{ flex: 1, background: '#06B6D4', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Registrar en Supabase</button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalNuevaCita && (
+        <div className="modal-overlay">
+          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: basePalette.textMain }}>Programar Nueva Cita</h3>
+              <button onClick={() => setModalNuevaCita(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: basePalette.textMuted }}><X size={20} /></button>
+            </div>
+
+            <form onSubmit={handleCrearCita} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Seleccionar Paciente *</label>
+                <select 
+                  required
+                  value={formCita.paciente_id}
+                  onChange={(e) => setFormCita({ ...formCita, paciente_id: e.target.value })}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }}
+                >
+                  <option value="">-- Seleccionar Paciente --</option>
+                  {pacientes.map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre_completo} (DNI: {p.dni})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Fecha *</label>
+                  <input type="date" required value={formCita.fecha} onChange={(e) => setFormCita({...formCita, fecha: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Hora *</label>
+                  <input type="time" required value={formCita.hora} onChange={(e) => setFormCita({...formCita, hora: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Motivo de la Cita</label>
+                <textarea rows={3} placeholder="Ej: Control postoperatorio de 15 días..." value={formCita.motivo} onChange={(e) => setFormCita({...formCita, motivo: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', resize: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                <button type="button" onClick={() => setModalNuevaCita(false)} style={{ flex: 1, background: 'transparent', border: `1px solid ${basePalette.borders}`, borderRadius: '8px', padding: '10px', fontSize: '13px', cursor: 'pointer', color: basePalette.textMain }}>Cancelar</button>
+                <button type="submit" style={{ flex: 1, background: '#0EA5E9', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Programar Cita</button>
               </div>
 
             </form>
@@ -2811,32 +3324,65 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: formPaciente.estado === 'internacion' ? '1fr' : '1fr 1fr', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Comienzo de Consulta</label>
-                  <input type="date" value={formPaciente.fecha_inicio_consulta} onChange={(e) => setFormPaciente({...formPaciente, fecha_inicio_consulta: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
+                  <input type="date" value={formPaciente.fecha_inicio_consulta} onChange={(e) => setFormPaciente({...formPaciente, fecha_inicio_consulta: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Hospital / Sanatorio de Atención</label>
-                  <input type="text" placeholder="Ej: Sanatorio Otamendi" value={formPaciente.hospital_atencion} onChange={(e) => setFormPaciente({...formPaciente, hospital_atencion: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
-                </div>
+                {formPaciente.estado !== 'internacion' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Hospital / Sanatorio de Atención</label>
+                    <input type="text" placeholder="Ej: Sanatorio Otamendi" value={formPaciente.hospital_atencion} onChange={(e) => setFormPaciente({...formPaciente, hospital_atencion: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Obra Social / Prepaga</label>
-                  <input type="text" placeholder="OSDE 310" value={formPaciente.obra_social} onChange={(e) => setFormPaciente({...formPaciente, obra_social: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
+                  <input type="text" placeholder="OSDE 310" value={formPaciente.obra_social} onChange={(e) => setFormPaciente({...formPaciente, obra_social: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>E-mail</label>
-                  <input type="email" placeholder="ejemplo@mail.com" value={formPaciente.email} onChange={(e) => setFormPaciente({...formPaciente, email: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
+                  <input type="email" placeholder="ejemplo@mail.com" value={formPaciente.email} onChange={(e) => setFormPaciente({...formPaciente, email: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
                 </div>
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Diagnóstico Principal</label>
-                <textarea rows={2} value={formPaciente.diagnostico_principal} onChange={(e) => setFormPaciente({...formPaciente, diagnostico_principal: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', resize: 'none' }} />
+                <textarea rows={2} value={formPaciente.diagnostico_principal} onChange={(e) => setFormPaciente({...formPaciente, diagnostico_principal: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', resize: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
               </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Estado al Finalizar Registro *</label>
+                  <select value={formPaciente.estado} onChange={(e) => setFormPaciente({...formPaciente, estado: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }}>
+                    <option value="consulta">Consulta / Ambulatorio</option>
+                    <option value="observacion">En Observación</option>
+                    <option value="internacion">Internada</option>
+                    <option value="quirófano">Quirófano</option>
+                    <option value="seguimiento">Seguimiento</option>
+                    <option value="alta">Alta</option>
+                  </select>
+                </div>
+              </div>
+
+              {formPaciente.estado === 'internacion' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr', gap: '16px', padding: '16px', background: darkMode ? '#111b30' : '#f0f9ff', borderRadius: '8px', border: `1px solid ${darkMode ? '#1e2d4a' : '#BFDBFE'}` }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Hospital / Centro de Internación *</label>
+                    <input type="text" required placeholder="Ej: Sanatorio Otamendi" value={formPaciente.hospital_atencion} onChange={(e) => setFormPaciente({...formPaciente, hospital_atencion: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '12px', background: darkMode ? '#18243c' : 'white', color: basePalette.textMain }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Habitación *</label>
+                    <input type="text" required placeholder="Ej: 301" value={formPaciente.habitacion} onChange={(e) => setFormPaciente({...formPaciente, habitacion: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '12px', background: darkMode ? '#18243c' : 'white', color: basePalette.textMain }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Cama</label>
+                    <input type="text" placeholder="Ej: A" value={formPaciente.cama} onChange={(e) => setFormPaciente({...formPaciente, cama: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '12px', background: darkMode ? '#18243c' : 'white', color: basePalette.textMain }} />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <span style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>Mutaciones Clínicas</span>
