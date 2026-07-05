@@ -145,6 +145,7 @@ export default function App() {
   const [modalSignos, setModalSignos] = useState(false);
   const [internacionSeleccionada, setInternacionSeleccionada] = useState<any>(null);
   const [formSignos, setFormSignos] = useState({ temperatura: '', drenaje_cc: '', evolucion_diaria: '' });
+  const [toasts, setToasts] = useState<{ id: string; titulo: string; cuerpo: string }[]>([]);
 
   // Configuración de Alertas Personalizables
   const [configAlertas, setConfigAlertas] = useState({
@@ -486,6 +487,12 @@ export default function App() {
   const triggerNotification = async (titulo: string, cuerpo: string) => {
     playClinicalAlertSound();
 
+    const toastId = Math.random().toString();
+    setToasts(prev => [...prev, { id: toastId, titulo, cuerpo }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== toastId));
+    }, 6000);
+
     const nuevaNotif = {
       id: Math.random().toString(),
       titulo,
@@ -634,11 +641,38 @@ export default function App() {
     if (!internacionSeleccionada) return;
 
     try {
+      const tempVal = formSignos.temperatura ? Number(formSignos.temperatura) : null;
+      const drenVal = formSignos.drenaje_cc ? Number(formSignos.drenaje_cc) : null;
+
+      // Evaluar localmente al instante para lanzar sonido e in-app notifications
+      if (configAlertas.alarma_temperatura && tempVal !== null && tempVal >= configAlertas.umbral_temperatura) {
+        const desc = `Temperatura febril en Hab. ${internacionSeleccionada.habitacion}: ${tempVal}°C registrado.`;
+        triggerNotification('⚠️ Alerta Clínica Crítica', desc);
+        
+        // Registrar en alertas_activas
+        await supabase.from('alertas_activas').insert({
+          paciente_id: internacionSeleccionada.paciente_id,
+          tipo: 'temperatura_alta',
+          descripcion: desc
+        });
+      }
+
+      if (configAlertas.alarma_drenaje && drenVal !== null && drenVal >= configAlertas.umbral_drenaje) {
+        const desc = `Débito excesivo de drenaje en Hab. ${internacionSeleccionada.habitacion}: ${drenVal} cc acumulado.`;
+        triggerNotification('⚠️ Alerta Clínica Crítica', desc);
+
+        await supabase.from('alertas_activas').insert({
+          paciente_id: internacionSeleccionada.paciente_id,
+          tipo: 'drenaje_excesivo',
+          descripcion: desc
+        });
+      }
+
       const { error } = await supabase
         .from('internaciones')
         .update({
-          temperatura: formSignos.temperatura ? Number(formSignos.temperatura) : null,
-          drenaje_cc: formSignos.drenaje_cc ? Number(formSignos.drenaje_cc) : null,
+          temperatura: tempVal,
+          drenaje_cc: drenVal,
           evolucion_diaria: formSignos.evolucion_diaria
         })
         .eq('id', internacionSeleccionada.id);
@@ -3649,6 +3683,43 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
           </div>
         </div>
       )}
+
+      {/* CONTENEDOR DE TOASTS VISUALES EN PANTALLA */}
+      <div style={{ position: 'fixed', top: '24px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '12px', pointerEvents: 'none' }}>
+        {toasts.map(t => (
+          <div key={t.id} style={{
+            pointerEvents: 'auto',
+            background: darkMode ? '#1e293b' : 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(12px)',
+            borderRadius: '12px',
+            border: '1.5px solid rgba(239, 68, 68, 0.4)',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+            padding: '16px 20px',
+            width: '320px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            animation: 'slideIn 0.3s ease-out'
+          }}>
+            <style dangerouslySetInnerHTML={{__html: `
+              @keyframes slideIn {
+                from { transform: translateX(120%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+              }
+            `}} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 700, fontSize: '13px', color: '#EF4444' }}>{t.titulo}</span>
+              <button 
+                onClick={() => setToasts(prev => prev.filter(item => item.id !== t.id))}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '14px', lineHeight: 1 }}
+              >
+                ✕
+              </button>
+            </div>
+            <span style={{ fontSize: '12px', color: basePalette.textMain, fontWeight: 500 }}>{t.cuerpo}</span>
+          </div>
+        ))}
+      </div>
 
     </div>
   );
