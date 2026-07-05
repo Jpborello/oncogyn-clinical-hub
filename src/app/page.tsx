@@ -333,6 +333,9 @@ export default function App() {
     // Cargar permisos de notificación del navegador
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setNotifPermission(Notification.permission);
+      if (Notification.permission === 'granted') {
+        setTimeout(() => subscribeUserToPush(), 1500);
+      }
     }
     
     fetchData();
@@ -628,10 +631,78 @@ export default function App() {
     }
   };
 
+  // Conversión de clave VAPID pública
+  const urlB64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  // Suscribir al usuario al servidor Web Push
+  const subscribeUserToPush = async () => {
+    try {
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+        console.warn('Web Push no está soportado en este navegador.');
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (!subscription) {
+        const pubKey = 'BC1zOSRYoHMs4tGkmurDaSioDNV4NeEw42aw3lQGR7g-rjFFUxYzcU-RzxFTwiMJWmXpvKK-dqWRfLo_jQLC_D4';
+        const convertedKey = urlB64ToUint8Array(pubKey);
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedKey
+        });
+      }
+
+      const rawSub = subscription.toJSON();
+      if (!rawSub.endpoint || !rawSub.keys?.p256dh || !rawSub.keys?.auth) {
+        console.warn('Suscripción push incompleta o inválida.');
+        return;
+      }
+
+      // Guardar en la base de datos de Supabase vía API local
+      const res = await fetch('/api/push/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: rawSub.endpoint,
+          keys: {
+            p256dh: rawSub.keys.p256dh,
+            auth: rawSub.keys.auth
+          }
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Error al registrar la suscripción en el servidor');
+      }
+
+      console.log('Suscripción Web Push sincronizada exitosamente.');
+    } catch (err) {
+      console.error('Error suscribiendo al médico a notificaciones push:', err);
+    }
+  };
+
   const requestNotificationPermission = () => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       Notification.requestPermission().then(permission => {
         setNotifPermission(permission);
+        if (permission === 'granted') {
+          subscribeUserToPush();
+        }
       });
     }
   };

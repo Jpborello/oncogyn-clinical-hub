@@ -30,8 +30,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests from the same origin, avoiding API calls & supabase
-  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
+  // Solo cachear peticiones GET del mismo origen
+  // IMPORTANTE: Excluimos llamadas a APIs, archivos de Next.js (_next/) y pre-carga de páginas (_rsc) para evitar caché obsoleta en navegación
+  if (
+    event.request.method !== 'GET' || 
+    !event.request.url.startsWith(self.location.origin) ||
+    event.request.url.includes('/api/') ||
+    event.request.url.includes('/_next/') ||
+    event.request.url.includes('_rsc=')
+  ) {
     return;
   }
 
@@ -41,7 +48,7 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
       return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic' || event.request.url.includes('/api/')) {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
         const responseToCache = response.clone();
@@ -56,6 +63,37 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// RECEPTOR DE NOTIFICACIONES PUSH EN SEGUNDO PLANO
+self.addEventListener('push', (event) => {
+  let data = { titulo: 'Alerta OncoGyn', cuerpo: 'Nueva alerta clínica disponible' };
+  try {
+    if (event.data) {
+      data = event.data.json();
+    }
+  } catch (e) {
+    if (event.data) {
+      data.cuerpo = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.cuerpo,
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    vibrate: [300, 100, 300, 100, 300],
+    tag: 'oncogyn-critica',
+    renotify: true,
+    data: {
+      url: '/'
+    }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.titulo, options)
+  );
+});
+
+// MANEJADOR DE CLIC EN NOTIFICACIÓN PUSH
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
@@ -67,4 +105,3 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
-
