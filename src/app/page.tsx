@@ -147,6 +147,11 @@ export default function App() {
   const [formSignos, setFormSignos] = useState({ temperatura: '', drenaje_cc: '', evolucion_diaria: '' });
   const [toasts, setToasts] = useState<{ id: string; titulo: string; cuerpo: string }[]>([]);
 
+  // Alarma persistente de emergencia
+  const [alarmaActiva, setAlarmaActiva] = useState(false);
+  const [alarmaDetalle, setAlarmaDetalle] = useState('');
+  const intervalAlarmaRef = useRef<any>(null);
+
   // Configuración de Alertas Personalizables
   const [configAlertas, setConfigAlertas] = useState({
     alarma_temperatura: true,
@@ -484,8 +489,93 @@ export default function App() {
     }
   };
 
+  const iniciarAlarmaPersistente = (mensaje: string) => {
+    setAlarmaActiva(true);
+    setAlarmaDetalle(mensaje);
+
+    if (intervalAlarmaRef.current) {
+      clearInterval(intervalAlarmaRef.current);
+    }
+
+    const reproducirTono = () => {
+      if (!configAlertas.sonido_activo) return;
+      try {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+        const ctx = audioContextRef.current;
+        if (ctx.state === 'suspended') {
+          ctx.resume();
+        }
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(987.77, ctx.currentTime);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+      } catch (e) {
+        console.error('Error al sonar alarma persistente:', e);
+      }
+    };
+
+    reproducirTono();
+    intervalAlarmaRef.current = setInterval(reproducirTono, 1200);
+  };
+
+  const silenciarAlarma = () => {
+    setAlarmaActiva(false);
+    setAlarmaDetalle('');
+    if (intervalAlarmaRef.current) {
+      clearInterval(intervalAlarmaRef.current);
+      intervalAlarmaRef.current = null;
+    }
+  };
+
+  // Screen Wake Lock API
+  useEffect(() => {
+    let wakeLock: any = null;
+    const requestWakeLock = async () => {
+      try {
+        if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+          wakeLock = await (navigator as any).wakeLock.request('screen');
+          console.log('Wake Lock activo');
+        }
+      } catch (err) {
+        console.warn('Wake Lock error:', err);
+      }
+    };
+
+    requestWakeLock();
+
+    const handleVisibilityChange = async () => {
+      if (wakeLock !== null && document.visibilityState === 'visible') {
+        await requestWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      if (wakeLock) {
+        wakeLock.release().then(() => {
+          wakeLock = null;
+        });
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   const triggerNotification = async (titulo: string, cuerpo: string) => {
-    playClinicalAlertSound();
+    if (titulo.includes('⚠️') || titulo.includes('Alerta')) {
+      iniciarAlarmaPersistente(cuerpo);
+    } else {
+      playClinicalAlertSound();
+    }
 
     const toastId = Math.random().toString();
     setToasts(prev => [...prev, { id: toastId, titulo, cuerpo }]);
@@ -3720,6 +3810,96 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
           </div>
         ))}
       </div>
+
+      {/* OVERLAY DE ALARMA DE EMERGENCIA PERSISTENTE */}
+      {alarmaActiva && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(220, 38, 38, 0.4)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: 'pulseBg 1.5s infinite alternate'
+        }}>
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes pulseBg {
+              from { background: rgba(220, 38, 38, 0.4); }
+              to { background: rgba(220, 38, 38, 0.7); }
+            }
+          `}} />
+          <div style={{
+            background: basePalette.bgCard,
+            borderRadius: '24px',
+            border: '3px solid #DC2626',
+            boxShadow: '0 25px 50px -12px rgba(220, 38, 38, 0.5)',
+            padding: '36px',
+            width: '90%',
+            maxWidth: '500px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '20px'
+          }}>
+            <div style={{
+              background: '#FEE2E2',
+              borderRadius: '50%',
+              width: '80px',
+              height: '80px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              animation: 'pulseRing 1s infinite'
+            }}>
+              <style dangerouslySetInnerHTML={{__html: `
+                @keyframes pulseRing {
+                  0% { transform: scale(0.95); }
+                  50% { transform: scale(1.1); }
+                  100% { transform: scale(0.95); }
+                }
+              `}} />
+              <VolumeX size={40} style={{ color: '#DC2626' }} />
+            </div>
+            
+            <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#DC2626', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              🚨 Alerta Clínica Crítica
+            </h2>
+            
+            <p style={{ fontSize: '15px', fontWeight: 600, color: basePalette.textMain, lineHeight: 1.5 }}>
+              {alarmaDetalle}
+            </p>
+            
+            <p style={{ fontSize: '12px', color: basePalette.textMuted }}>
+              La alarma seguirá sonando hasta que sea silenciada manualmente.
+            </p>
+
+            <button 
+              onClick={silenciarAlarma}
+              style={{
+                width: '100%',
+                background: '#DC2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '16px',
+                fontSize: '15px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+                boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.4)'
+              }}
+            >
+              Silenciar Alarma
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
