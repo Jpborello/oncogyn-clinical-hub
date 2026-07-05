@@ -151,6 +151,7 @@ export default function App() {
   const [alarmaActiva, setAlarmaActiva] = useState(false);
   const [alarmaDetalle, setAlarmaDetalle] = useState('');
   const intervalAlarmaRef = useRef<any>(null);
+  const [realtimeStatus, setRealtimeStatus] = useState<string>('Conectando...');
 
   // Configuración de Alertas Personalizables
   const [configAlertas, setConfigAlertas] = useState({
@@ -367,7 +368,15 @@ export default function App() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'config_alertas' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'citas' }, () => fetchData())
-      .subscribe();
+      .subscribe((status, err) => {
+        if (err) {
+          setRealtimeStatus(`Error: ${err.message}`);
+          console.error('Error de suscripción Realtime:', err);
+        } else {
+          setRealtimeStatus(status);
+          console.log('Realtime status:', status);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -2995,6 +3004,24 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 >
                   {notifPermission === 'granted' ? 'Habilitado' : 'Solicitar'}
                 </button>
+              </div>
+
+              {/* Estado de Realtime */}
+              <div style={{ borderTop: `1px solid ${basePalette.borders}`, paddingTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: basePalette.textMain }}>Servidor en Tiempo Real (Realtime)</span>
+                  <p style={{ fontSize: '11px', color: basePalette.textMuted, marginTop: '2px' }}>Estado de conexión para alertas instantáneas</p>
+                </div>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  color: realtimeStatus === 'SUBSCRIBED' ? '#16A34A' : '#DC2626',
+                  background: realtimeStatus === 'SUBSCRIBED' ? '#DCFCE7' : '#FEE2E2',
+                  padding: '4px 8px',
+                  borderRadius: '6px'
+                }}>
+                  {realtimeStatus === 'SUBSCRIBED' ? '🟢 Conectado' : `🔴 ${realtimeStatus}`}
+                </span>
               </div>
             </div>
 
