@@ -355,16 +355,22 @@ export default function App() {
     const channel = supabase
       .channel('realtime-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'internaciones' }, (payload) => {
+        console.log('REALTIME EVENT: internaciones', payload);
         evaluarAlertasClinicas(payload.new);
         fetchData();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pacientes' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pacientes' }, (payload) => {
+        console.log('REALTIME EVENT: pacientes', payload);
+        fetchData();
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cirugias' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'finanzas' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'estudios' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'consultas' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'alertas_activas' }, (payload) => {
+        console.log('REALTIME EVENT: alertas_activas', payload);
         if (payload.eventType === 'INSERT') {
+          console.log('REALTIME ALERT TRIGGERED:', payload.new.descripcion);
           triggerNotification('⚠️ Alerta Clínica Crítica', payload.new.descripcion);
         }
         fetchData();
@@ -825,6 +831,16 @@ export default function App() {
           tipo: 'temperatura_alta',
           descripcion: desc
         });
+
+        // Enviar notificación Web Push inmediata a todos los dispositivos registrados
+        fetch('/api/push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            titulo: '🚨 Alerta Clínica Crítica',
+            cuerpo: desc
+          })
+        }).catch(err => console.error('Error al enviar Web Push inmediato:', err));
       }
 
       if (configAlertas.alarma_drenaje && drenVal !== null && drenVal >= configAlertas.umbral_drenaje) {
@@ -836,6 +852,16 @@ export default function App() {
           tipo: 'drenaje_excesivo',
           descripcion: desc
         });
+
+        // Enviar notificación Web Push inmediata a todos los dispositivos registrados
+        fetch('/api/push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            titulo: '🚨 Alerta Clínica Crítica',
+            cuerpo: desc
+          })
+        }).catch(err => console.error('Error al enviar Web Push inmediato:', err));
       }
 
       const { error } = await supabase
