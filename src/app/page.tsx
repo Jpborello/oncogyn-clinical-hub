@@ -1878,20 +1878,14 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
               </button>
 
               {mostrarPanelNotificaciones && (
-                <div style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '48px',
-                  width: '360px',
-                  background: basePalette.bgCard,
-                  borderRadius: '12px',
-                  border: `1px solid ${basePalette.borders}`,
-                  boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                  zIndex: 100,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  maxHeight: '400px'
-                }}>
+                <div 
+                  className="notification-dropdown"
+                  style={{
+                    background: basePalette.bgCard,
+                    border: `1px solid ${basePalette.borders}`,
+                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                  }}
+                >
                   <div style={{ padding: '16px', borderBottom: `1px solid ${basePalette.borders}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 600, fontSize: '14px', color: basePalette.textMain }}>Notificaciones</span>
                     <button 
@@ -1985,17 +1979,17 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                   
                   {/* ALERTA CLÍNICA VISUAL (SI HAY ALERTAS ACTIVAS) */}
                   {alertasActivas.filter(a => !a.leida).length > 0 && (
-                    <div style={{
-                      background: '#FEE2E2',
-                      border: '1.5px solid #EF4444',
-                      borderRadius: '12px',
-                      padding: '16px 20px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                      animation: 'pulse 2s infinite'
-                    }}>
+                    <div 
+                      className="alert-banner"
+                      style={{
+                        background: '#FEE2E2',
+                        border: '1.5px solid #EF4444',
+                        borderRadius: '12px',
+                        padding: '16px 20px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                        animation: 'pulse 2s infinite'
+                      }}
+                    >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <Bell size={24} style={{ color: basePalette.error }} />
                         <div>
@@ -2691,83 +2685,85 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                     </button>
                   </div>
 
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid #BAE6FD', color: basePalette.textMuted }}>
-                        <th style={{ padding: '12px' }}>Paciente</th>
-                        <th style={{ padding: '12px' }}>DNI</th>
-                        <th style={{ padding: '12px' }}>Estado</th>
-                        <th style={{ padding: '12px' }}>Obra Social</th>
-                        <th style={{ padding: '12px' }}>Diagnóstico</th>
-                        <th style={{ padding: '12px' }}>Nacionalidad</th>
-                        <th style={{ padding: '12px' }}>Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredPatients.map((p) => {
-                        let badgeBg = '#E5E7EB';
-                        let badgeText = '#374151';
-                        let stateLabel = 'Consulta';
-                        switch (p.estado) {
-                          case 'internacion':
-                            badgeBg = '#fee2e2';
-                            badgeText = '#b91c1c';
-                            stateLabel = 'Internada';
-                            break;
-                          case 'observacion':
-                            badgeBg = '#fef3c7';
-                            badgeText = '#b45309';
-                            stateLabel = 'En Observación';
-                            break;
-                          case 'quirófano':
-                            badgeBg = '#ecfeff';
-                            badgeText = '#0891b2';
-                            stateLabel = 'En Quirófano';
-                            break;
-                          case 'seguimiento':
-                            badgeBg = '#f3e8ff';
-                            badgeText = '#6b21a8';
-                            stateLabel = 'Seguimiento';
-                            break;
-                          case 'alta':
-                            badgeBg = '#d1fae5';
-                            badgeText = '#065f46';
-                            stateLabel = 'Alta';
-                            break;
-                          default:
-                            badgeBg = '#dcfce7';
-                            badgeText = '#166534';
-                            stateLabel = 'Consulta';
-                        }
+                  <div className="table-responsive">
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid #BAE6FD', color: basePalette.textMuted }}>
+                          <th style={{ padding: '12px' }}>Paciente</th>
+                          <th style={{ padding: '12px' }}>DNI</th>
+                          <th style={{ padding: '12px' }}>Estado</th>
+                          <th style={{ padding: '12px' }}>Obra Social</th>
+                          <th style={{ padding: '12px' }}>Diagnóstico</th>
+                          <th style={{ padding: '12px' }}>Nacionalidad</th>
+                          <th style={{ padding: '12px' }}>Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPatients.map((p) => {
+                          let badgeBg = '#E5E7EB';
+                          let badgeText = '#374151';
+                          let stateLabel = 'Consulta';
+                          switch (p.estado) {
+                            case 'internacion':
+                              badgeBg = '#fee2e2';
+                              badgeText = '#b91c1c';
+                              stateLabel = 'Internada';
+                              break;
+                            case 'observacion':
+                              badgeBg = '#fef3c7';
+                              badgeText = '#b45309';
+                              stateLabel = 'En Observación';
+                              break;
+                            case 'quirófano':
+                              badgeBg = '#ecfeff';
+                              badgeText = '#0891b2';
+                              stateLabel = 'En Quirófano';
+                              break;
+                            case 'seguimiento':
+                              badgeBg = '#f3e8ff';
+                              badgeText = '#6b21a8';
+                              stateLabel = 'Seguimiento';
+                              break;
+                            case 'alta':
+                              badgeBg = '#d1fae5';
+                              badgeText = '#065f46';
+                              stateLabel = 'Alta';
+                              break;
+                            default:
+                              badgeBg = '#dcfce7';
+                              badgeText = '#166534';
+                              stateLabel = 'Consulta';
+                          }
 
-                        return (
-                          <tr key={p.id} style={{ borderBottom: `1px solid ${basePalette.borders}` }}>
-                            <td style={{ padding: '16px 12px', fontWeight: 600, color: basePalette.textMain }}>{p.nombre_completo}</td>
-                            <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.dni}</td>
-                            <td style={{ padding: '16px 12px' }}>
-                              <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '12px', background: badgeBg, color: badgeText, whiteSpace: 'nowrap' }}>
-                                {stateLabel}
-                              </span>
-                            </td>
-                            <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.obra_social || 'Particular'}</td>
-                            <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.diagnostico_principal || 'Sin diagnóstico cargado'}</td>
-                            <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.nacionalidad || 'Argentina'}</td>
-                            <td style={{ padding: '16px 12px' }}>
-                              <button 
-                                onClick={() => {
-                                  setPacienteSeleccionadoId(p.id);
-                                  setModalVerFichaCompleta(true);
-                                }}
-                                style={{ background: '#f0fdfa', border: '1px solid #0EA5E9', color: '#0EA5E9', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                              >
-                                Ver Ficha / Historia
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                          return (
+                            <tr key={p.id} style={{ borderBottom: `1px solid ${basePalette.borders}` }}>
+                              <td style={{ padding: '16px 12px', fontWeight: 600, color: basePalette.textMain }}>{p.nombre_completo}</td>
+                              <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.dni}</td>
+                              <td style={{ padding: '16px 12px' }}>
+                                <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '12px', background: badgeBg, color: badgeText, whiteSpace: 'nowrap' }}>
+                                  {stateLabel}
+                                </span>
+                              </td>
+                              <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.obra_social || 'Particular'}</td>
+                              <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.diagnostico_principal || 'Sin diagnóstico cargado'}</td>
+                              <td style={{ padding: '16px 12px', color: basePalette.textSecondary }}>{p.nacionalidad || 'Argentina'}</td>
+                              <td style={{ padding: '16px 12px' }}>
+                                <button 
+                                  onClick={() => {
+                                    setPacienteSeleccionadoId(p.id);
+                                    setModalVerFichaCompleta(true);
+                                  }}
+                                  style={{ background: '#f0fdfa', border: '1px solid #0EA5E9', color: '#0EA5E9', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                                >
+                                  Ver Ficha / Historia
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
 
@@ -2925,7 +2921,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
               {/* TAB 5: FINANZAS */}
               {activeTab === 'finances' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                  <div className="grid-3cols" style={{ gap: '24px' }}>
                     <div style={{ background: basePalette.bgCard, padding: '24px', borderRadius: '12px', border: '1.5px solid #16A34A', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
                       <span style={{ fontSize: '13px', color: basePalette.textMuted }}>Ingresos Realizados</span>
                       <p style={{ fontSize: '28px', fontWeight: 700, color: '#16A34A', marginTop: '4px' }}>
@@ -3005,7 +3001,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       {/* MODAL CONFIGURACIÓN GENERAL DEL PORTAL */}
       {mostrarConfig && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '95%', maxWidth: '480px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '95%', maxWidth: '480px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Settings size={20} style={{ color: basePalette.primario }} />
@@ -3133,7 +3129,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       {/* MODAL CONFIGURACIÓN ALERTA CLÍNICA PERSONALIZABLE */}
       {modalConfigAlertas && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -3207,7 +3203,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       {/* MODAL NUEVA CIRUGÍA (NUEVA BITÁCORA) */}
       {modalNuevaCirugia && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '600px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '600px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: basePalette.textMain }}>Agregar Bitácora Quirúrgica</h3>
@@ -3231,7 +3227,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr', gap: '16px' }}>
+              <div className="form-grid-3">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Procedimiento *</label>
                   <input type="text" required placeholder="Ej: Citorreducción ovárica" value={formCirugia.procedimiento} onChange={(e) => setFormCirugia({...formCirugia, procedimiento: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
@@ -3246,7 +3242,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="form-grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Duración (minutos)</label>
                   <input type="number" placeholder="Ej: 120" value={formCirugia.duracion_minutos} onChange={(e) => setFormCirugia({...formCirugia, duracion_minutos: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
@@ -3257,7 +3253,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="form-grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Diagnóstico Preoperatorio</label>
                   <input type="text" placeholder="Ej: Tumoración anexial" value={formCirugia.diagnostico_preop} onChange={(e) => setFormCirugia({...formCirugia, diagnostico_preop: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
@@ -3285,7 +3281,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {modalNuevaCita && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: basePalette.textMain }}>Programar Nueva Cita</h3>
@@ -3309,7 +3305,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="form-grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Fecha *</label>
                   <input type="date" required value={formCita.fecha} onChange={(e) => setFormCita({...formCita, fecha: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: `1px solid ${basePalette.borders}`, outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
@@ -3337,7 +3333,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
       {modalSignos && internacionSeleccionada && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '450px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '450px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: basePalette.textMain }}>Registrar Signos y Evolución</h3>
@@ -3351,7 +3347,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
             <form onSubmit={handleGuardarSignos} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="form-grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Temperatura (°C)</label>
                   <input 
@@ -3399,7 +3395,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       {/* MODAL PREPARAR EVOLUCIÓN */}
       {modalEvolucion && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '600px', padding: '28px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '600px', padding: '28px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FileText size={20} style={{ color: basePalette.primario }} />
@@ -3475,7 +3471,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       {/* MODAL VER FICHA COMPLETA (HISTORIA CLÍNICA INTEGRAL) */}
       {modalVerFichaCompleta && pacienteFicha && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '850px', height: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}`, overflow: 'hidden' }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '850px', height: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}`, overflow: 'hidden' }}>
             
             <div style={{ padding: '24px', borderBottom: `1px solid ${basePalette.borders}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: darkMode ? '#0c253f' : '#F0F9FF' }}>
               <div>
@@ -3488,10 +3484,10 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
             <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '20px' }}>
+              <div className="form-grid-1-2" style={{ gap: '20px' }}>
                 <div style={{ background: darkMode ? '#18243c' : '#F8FAFC', padding: '16px', borderRadius: '8px', border: `1px solid ${basePalette.borders}` }}>
                   <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: '#0EA5E9' }}>Datos Personales y Seguimiento</h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px' }}>
+                  <div className="form-grid-2" style={{ gap: '12px', fontSize: '13px' }}>
                     <div>
                       <p style={{ color: basePalette.textMuted }}>Nacimiento:</p>
                       <p style={{ fontWeight: 600 }}>{pacienteFicha.fecha_nacimiento || 'No cargada'}</p>
@@ -3590,7 +3586,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                   </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-grid-2" style={{ gap: '16px' }}>
                   {estudiosPaciente.length === 0 ? (
                     <p style={{ fontSize: '13px', color: basePalette.textMuted, fontStyle: 'italic', gridColumn: 'span 2' }}>No hay estudios cargados en esta ficha.</p>
                   ) : (
@@ -3632,7 +3628,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       {/* MODAL NUEVO PACIENTE FORMULARIO COMPLETO */}
       {modalNuevoPaciente && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '650px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '650px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: basePalette.textMain }}>Ingreso de Nuevo Paciente</h3>
@@ -3641,7 +3637,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
 
             <form onSubmit={handleCrearPaciente} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="form-grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Nombre Completo *</label>
                   <input type="text" required value={formPaciente.nombre_completo} onChange={(e) => setFormPaciente({...formPaciente, nombre_completo: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
@@ -3652,7 +3648,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="form-grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Fecha de Nacimiento</label>
                   <input type="date" value={formPaciente.fecha_nacimiento} onChange={(e) => setFormPaciente({...formPaciente, fecha_nacimiento: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
@@ -3663,7 +3659,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="form-grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Teléfono Principal</label>
                   <input type="text" placeholder="Ej: +54911..." value={formPaciente.telefono} onChange={(e) => setFormPaciente({...formPaciente, telefono: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none' }} />
@@ -3674,7 +3670,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: formPaciente.estado === 'internacion' ? '1fr' : '1fr 1fr', gap: '16px' }}>
+              <div className="form-grid-2" style={{ gridTemplateColumns: formPaciente.estado === 'internacion' ? '1fr' : undefined, gap: '16px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Comienzo de Consulta</label>
                   <input type="date" value={formPaciente.fecha_inicio_consulta} onChange={(e) => setFormPaciente({...formPaciente, fecha_inicio_consulta: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
@@ -3687,7 +3683,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '16px' }}>
+              <div className="form-grid-1-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '4px' }}>Obra Social / Prepaga</label>
                   <input type="text" placeholder="OSDE 310" value={formPaciente.obra_social} onChange={(e) => setFormPaciente({...formPaciente, obra_social: e.target.value})} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', outline: 'none', background: darkMode ? '#1e293b' : 'white', color: basePalette.textMain }} />
@@ -3718,7 +3714,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
               </div>
 
               {formPaciente.estado === 'internacion' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr', gap: '16px', padding: '16px', background: darkMode ? '#111b30' : '#f0f9ff', borderRadius: '8px', border: `1px solid ${darkMode ? '#1e2d4a' : '#BFDBFE'}` }}>
+                <div className="form-grid-3" style={{ padding: '16px', background: darkMode ? '#111b30' : '#f0f9ff', borderRadius: '8px', border: `1px solid ${darkMode ? '#1e2d4a' : '#BFDBFE'}` }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: basePalette.textMain }}>Hospital / Centro de Internación *</label>
                     <input type="text" required placeholder="Ej: Sanatorio Otamendi" value={formPaciente.hospital_atencion} onChange={(e) => setFormPaciente({...formPaciente, hospital_atencion: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '12px', background: darkMode ? '#18243c' : 'white', color: basePalette.textMain }} />
@@ -3762,7 +3758,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       {/* MODAL NUEVA CONSULTA / NOTA */}
       {modalNuevaConsulta && (
         <div className="modal-overlay-high">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: basePalette.textMain }}>Nueva Evolución / Nota Clínica</h3>
@@ -3800,7 +3796,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       {/* MODAL NUEVO ESTUDIO / CARGA DE ARCHIVOS */}
       {modalNuevoEstudio && (
         <div className="modal-overlay-high">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 700, color: basePalette.textMain }}>Cargar Estudio (Ecografías / Radiografías / PDFs)</h3>
@@ -3866,7 +3862,7 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       {/* MODAL NOTA RÁPIDA POR VOZ */}
       {modalNotaRapida && (
         <div className="modal-overlay">
-          <div style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
+          <div className="modal-container" style={{ background: basePalette.bgCard, borderRadius: '16px', width: '100%', maxWidth: '500px', padding: '28px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', border: `1px solid ${basePalette.borders}` }}>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -3899,28 +3895,12 @@ ${internacionPaciente ? `- Internada en Habitación ${internacionPaciente.habita
       )}
 
       {/* CONTENEDOR DE TOASTS VISUALES EN PANTALLA */}
-      <div style={{ position: 'fixed', top: '24px', right: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '12px', pointerEvents: 'none' }}>
+      <div className="toast-container">
         {toasts.map(t => (
-          <div key={t.id} style={{
-            pointerEvents: 'auto',
+          <div key={t.id} className="toast-card" style={{
             background: darkMode ? '#1e293b' : 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(12px)',
-            borderRadius: '12px',
             border: '1.5px solid rgba(239, 68, 68, 0.4)',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-            padding: '16px 20px',
-            width: '320px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '4px',
-            animation: 'slideIn 0.3s ease-out'
           }}>
-            <style dangerouslySetInnerHTML={{__html: `
-              @keyframes slideIn {
-                from { transform: translateX(120%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-              }
-            `}} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 700, fontSize: '13px', color: '#EF4444' }}>{t.titulo}</span>
               <button 
